@@ -1135,3 +1135,20 @@ footer {
 }
 .auth-card input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
 .auth-card .full-width { width: 100%; justify-content: center; margin-top: 8px; }
+
+/* ---------------------------------------------------------------
+   LOGO IMAGES
+   --------------------------------------------------------------- */
+.logo-img {
+  height: 36px;
+  width: auto;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.logo-img-footer {
+  height: 24px;
+  width: auto;
+  border-radius: 6px;
+  object-fit: contain;
+}

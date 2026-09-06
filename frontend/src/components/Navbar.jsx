@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
+import logo from './logo.jpg';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -17,7 +18,7 @@ export default function Navbar() {
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
       <div className="nav-logo">
-        <span className="logo-icon">IQ</span>
+        <img src={logo} alt="HireIQ Logo" className="logo-img" />
         HireIQ
       </div>
       <div className="nav-links">

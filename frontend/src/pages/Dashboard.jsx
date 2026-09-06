@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import { useEffect } from 'react';
+import logo from '../components/logo.jpg';
 
 const candidates = [
   { id: 1, name: 'Ayesha K.', role: 'Senior Backend Engineer', score: 94, status: 'Interview', match: 'Excellent' },
@@ -23,15 +24,16 @@ export default function Dashboard() {
   // Reset body overflow just in case the modal didn't unmount cleanly when navigating
   useEffect(() => {
     document.body.style.overflow = 'unset';
+    document.documentElement.style.overflow = 'unset';
   }, []);
 
   return (
     <div className="dashboard-layout">
       {/* Sidebar */}
       <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px' }} onClick={() => navigate('/')}>
-          <span className="logo-icon" style={{ cursor: 'pointer' }}>IQ</span>
-          <span style={{ cursor: 'pointer' }}>HireIQ</span>
+        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <img src={logo} alt="HireIQ Logo" className="logo-img" />
+          <span>HireIQ</span>
         </div>
         
         <nav className="dash-nav">
