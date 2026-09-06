@@ -4,6 +4,7 @@ import ParticleBackground from './components/ParticleBackground';
 import CursorGlow from './components/CursorGlow';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import AuthPage from './pages/AuthPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<AuthPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
