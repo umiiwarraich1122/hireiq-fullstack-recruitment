@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import logo from '../components/logo.jpg';
+import { supabase } from '../config/supabaseClient';
 
 const candidates = [
   { id: 1, name: 'Ayesha K.', role: 'Senior Backend Engineer', score: 94, status: 'Interview', match: 'Excellent' },
@@ -20,12 +21,43 @@ const stats = [
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null);
 
-  // Reset body overflow just in case the modal didn't unmount cleanly when navigating
+  // Auth Check and Reset Body Overflow
   useEffect(() => {
     document.body.style.overflow = 'unset';
     document.documentElement.style.overflow = 'unset';
-  }, []);
+
+    const fetchUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+      } else {
+        setUser(session.user);
+      }
+    };
+
+    fetchUser();
+
+    // Listen for auth changes (e.g. logout)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        navigate('/login');
+      } else if (session) {
+        setUser(session.user);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (!user) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>Loading Dashboard...</div>;
 
   return (
     <div className="dashboard-layout">
@@ -60,14 +92,19 @@ export default function Dashboard() {
         {/* Top Header */}
         <header className="dash-header">
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Welcome back, Umair!</h1>
+            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+              Welcome back, {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'User'}!
+            </h1>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Here is what's happening with your recruitment pipeline today.</p>
           </div>
           <div className="dash-header-actions">
             <ThemeToggle />
             <button className="btn-glow" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>+ New Job Role</button>
+            <button className="btn-outline" onClick={handleLogout} style={{ padding: '10px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
+              Sign Out
+            </button>
             <div className="user-avatar">
-              <img src="/images/umair.jpg" alt="User" />
+              <img src={user.user_metadata?.avatar_url || '/images/umair.jpg'} alt="User" />
             </div>
           </div>
         </header>
