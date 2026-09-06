@@ -1,0 +1,22 @@
+# Global ignores
+node_modules/
+dist/
+build/
+.DS_Store
+
+# Environment Variables - EXTREMELY IMPORTANT!
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Backend
+backend/node_modules/
+backend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
