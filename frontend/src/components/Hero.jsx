@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import AuthModal from './AuthModal';
 
 const candidates = [
   { name: 'Ayesha K.', score: 94, tags: [{ text: '✓ Verified · 12 Python repos', type: 'green' }, { text: 'No red flags', type: 'blue' }] },
@@ -19,6 +20,7 @@ const cardSlide = {
 
 export default function Hero() {
   const barsRef = useRef([]);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -45,7 +47,7 @@ export default function Hero() {
             HireIQ reads a resume like a senior engineer reviews a pull request — checking claims against GitHub, timelines, and references — then ranks everyone with plain-English reasoning.
           </motion.p>
           <motion.div className="hero-actions" variants={fadeUp} initial="hidden" animate="visible" custom={3}>
-            <button className="btn-glow" onClick={() => scrollTo('features')}>✦ See All 25 Agents</button>
+            <button className="btn-glow" onClick={() => setShowAuth(true)}>✦ Login / Sign Up</button>
             <a className="btn-outline" href="#pipeline" onClick={(e) => { e.preventDefault(); scrollTo('pipeline'); }}>How It Works →</a>
           </motion.div>
         </div>
@@ -75,6 +77,7 @@ export default function Hero() {
           </div>
         </motion.div>
       </div>
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </section>
   );
 }
