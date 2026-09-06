@@ -1,15 +1,9 @@
 import { ThemeProvider } from './context/ThemeContext';
-import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Stats from './components/Stats';
-import Features from './components/Features';
-import Pipeline from './components/Pipeline';
-import TechStack from './components/TechStack';
-import Creator from './components/Creator';
-import CTA from './components/CTA';
-import Footer from './components/Footer';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ParticleBackground from './components/ParticleBackground';
 import CursorGlow from './components/CursorGlow';
+import Landing from './pages/Landing';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -17,15 +11,12 @@ function App() {
       <CursorGlow />
       <div className="mesh-grad" />
       <ParticleBackground />
-      <Navbar />
-      <Hero />
-      <Stats />
-      <Features />
-      <Pipeline />
-      <TechStack />
-      <Creator />
-      <CTA />
-      <Footer />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
