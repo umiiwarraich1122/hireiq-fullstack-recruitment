@@ -57,42 +57,64 @@ export default function NovaChatbot({ isOpen, onClose }) {
 
   return (
     <AnimatePresence>
-      <div style={{
-        position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh',
-        background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-      }}>
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          style={{
-            background: 'var(--bg-heavy)', border: '1px solid var(--glass-border)',
-            borderRadius: '20px', width: '90%', maxWidth: '600px',
-            padding: '30px', boxShadow: '0 25px 50px rgba(0,0,0,0.5)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '1.5rem' }}>✨</span> Nova: Job Post Generator
-            </h2>
-            <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
-          </div>
+      {/* Optional: Subtle backdrop that can be clicked to close */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh',
+          background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)',
+          zIndex: 999
+        }}
+      />
 
-          <div style={{ marginBottom: '20px' }}>
-            <p style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+      {/* Right Sidebar Drawer */}
+      <motion.div 
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        style={{
+          position: 'fixed', top: 0, right: 0, height: '100vh',
+          width: '450px', maxWidth: '100%',
+          background: 'var(--bg-deep)', borderLeft: '1px solid var(--glass-border)',
+          boxShadow: '-10px 0 40px rgba(0,0,0,0.5)', zIndex: 1000,
+          display: 'flex', flexDirection: 'column'
+        }}
+      >
+        {/* Header */}
+        <div style={{ 
+          padding: '24px', borderBottom: '1px solid var(--glass-border)', 
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          background: 'var(--bg-heavy)'
+        }}>
+          <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
+            <span style={{ fontSize: '1.5rem' }}>✨</span> Nova: Post Generator
+          </h2>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='var(--text-primary)'} onMouseOut={e => e.target.style.color='var(--text-secondary)'}>✕</button>
+        </div>
+
+        {/* Scrollable Body Area */}
+        <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ marginBottom: '24px' }}>
+            <p style={{ margin: '0 0 12px 0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
               Describe the role you are hiring for, and Nova will generate a professional LinkedIn post for you.
             </p>
             <textarea 
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. we are hiring a ai enginer for zylo software 3 year expiernace rag spicaltaiztion"
+              placeholder="e.g. we are hiring an AI engineer for Zylo Software 3 year experience RAG specialization..."
               style={{
-                width: '100%', height: '100px', padding: '12px',
+                width: '100%', height: '120px', padding: '16px',
                 background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
                 borderRadius: '12px', color: 'var(--text-primary)',
-                fontFamily: 'inherit', resize: 'none', outline: 'none'
+                fontFamily: 'inherit', fontSize: '0.95rem', resize: 'none', outline: 'none',
+                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
               }}
+              onFocus={e => e.target.style.borderColor='var(--accent)'}
+              onBlur={e => e.target.style.borderColor='var(--glass-border)'}
             />
           </div>
 
@@ -100,33 +122,39 @@ export default function NovaChatbot({ isOpen, onClose }) {
             className="btn-glow" 
             onClick={generatePost} 
             disabled={loading || !prompt.trim()}
-            style={{ width: '100%', padding: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            style={{ width: '100%', padding: '14px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
           >
             {loading ? 'Nova is thinking...' : 'Generate Job Post'}
           </button>
 
           {response && (
-            <div style={{ marginTop: '24px' }}>
-              <h3 style={{ margin: '0 0 10px 0', color: 'var(--accent)', fontSize: '1rem' }}>Generated Post:</h3>
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', flex: 1 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, color: 'var(--accent)', fontSize: '1rem' }}>Generated Post:</h3>
+                <button 
+                  onClick={() => navigator.clipboard.writeText(response)}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onMouseOver={e => e.target.style.color='var(--text-primary)'} onMouseOut={e => e.target.style.color='var(--text-secondary)'}
+                >
+                  📋 Copy
+                </button>
+              </div>
               <div style={{ 
                 background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', 
                 border: '1px solid var(--glass-border)', color: 'var(--text-primary)',
-                fontSize: '0.95rem', lineHeight: '1.6', maxHeight: '250px', overflowY: 'auto',
+                fontSize: '0.95rem', lineHeight: '1.6', flex: 1, overflowY: 'auto',
                 whiteSpace: 'pre-wrap'
               }}>
                 {response}
               </div>
-              <button 
-                className="btn-outline"
-                onClick={() => navigator.clipboard.writeText(response)}
-                style={{ marginTop: '12px', width: '100%', padding: '10px' }}
-              >
-                📋 Copy to Clipboard
-              </button>
-            </div>
+            </motion.div>
           )}
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
 }
