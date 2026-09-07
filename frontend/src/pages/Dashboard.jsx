@@ -22,6 +22,9 @@ const stats = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [emails, setEmails] = useState([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Auth Check and Reset Body Overflow
   useEffect(() => {
@@ -34,6 +37,7 @@ export default function Dashboard() {
         navigate('/login');
       } else {
         setUser(session.user);
+        setSession(session);
       }
     };
 
@@ -45,6 +49,7 @@ export default function Dashboard() {
         navigate('/login');
       } else if (session) {
         setUser(session.user);
+        setSession(session);
       }
     });
 
@@ -55,6 +60,55 @@ export default function Dashboard() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const syncGmailCVs = async () => {
+    if (!session?.provider_token) {
+      alert("Google Access Token missing. Please Sign Out and Login again to refresh permissions.");
+      return;
+    }
+    
+    setIsSyncing(true);
+    try {
+      // 1. Search for emails with attachments containing 'resume' or 'cv'
+      const searchRes = await fetch(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=has:attachment (resume OR cv)", 
+        { headers: { Authorization: `Bearer ${session.provider_token}` } }
+      );
+      
+      const searchData = await searchRes.json();
+      
+      if (!searchData.messages || searchData.messages.length === 0) {
+        alert("No recent emails found with CV/Resume attachments.");
+        setIsSyncing(false);
+        return;
+      }
+
+      // 2. Fetch details for the first 5 emails
+      const messagesToFetch = searchData.messages.slice(0, 5);
+      const emailDetails = await Promise.all(
+        messagesToFetch.map(async (msg) => {
+          const msgRes = await fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
+            { headers: { Authorization: `Bearer ${session.provider_token}` } }
+          );
+          const msgData = await msgRes.json();
+          
+          // Extract subject and sender from headers
+          const subject = msgData.payload.headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+          const sender = msgData.payload.headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
+          
+          return { id: msg.id, subject, sender, snippet: msgData.snippet };
+        })
+      );
+      
+      setEmails(emailDetails);
+    } catch (err) {
+      console.error("Error fetching Gmail:", err);
+      alert("Failed to sync Gmail. Check console for details.");
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   if (!user) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>Loading Dashboard...</div>;
@@ -125,6 +179,50 @@ export default function Dashboard() {
               </motion.div>
             ))}
           </div>
+
+          {/* Smart Intake: Gmail Sync */}
+          <div className="dash-section-header" style={{ marginTop: '20px' }}>
+            <div>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                Smart Intake: Gmail Sync
+              </h3>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Automatically fetch emails containing CV/Resume attachments.</p>
+            </div>
+            <button className="btn-glow" onClick={syncGmailCVs} disabled={isSyncing} style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isSyncing ? 'Syncing...' : 'Sync Recent Resumes'}
+            </button>
+          </div>
+
+          {emails.length > 0 && (
+            <div className="candidate-list" style={{ marginBottom: '30px' }}>
+              {emails.map((email, i) => (
+                <motion.div 
+                  key={email.id} 
+                  className="candidate-row"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  style={{ gridTemplateColumns: '1fr 2fr 100px' }}
+                >
+                  <div className="c-info">
+                    <div className="c-avatar" style={{ background: 'rgba(234,67,53,0.1)', color: '#EA4335' }}>M</div>
+                    <div>
+                      <div className="c-name">{email.sender.split('<')[0].trim()}</div>
+                      <div className="c-role" style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>{email.sender.match(/<(.*)>/)?.[1] || ''}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{email.subject}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: email.snippet }} />
+                  </div>
+                  <div className="c-actions">
+                    <button className="btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Parse CV</button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
           {/* Active Candidates / Kanban Preview */}
           <div className="dash-section-header">
