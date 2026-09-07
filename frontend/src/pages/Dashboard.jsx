@@ -138,10 +138,12 @@ export default function Dashboard() {
           const stats = result.data;
           results.push({
             id: email.id || Math.random().toString(),
-            name: email.from ? email.from.split('<')[0].trim() : "Linus T. (Mocked Email)",
+            name: email.sender ? email.sender.split('<')[0].trim() : "Linus T. (Mocked Email)",
             github: stats,
-            matchScore: Math.floor(Math.random() * 15) + 85 // Mock score 85-99
+            matchScore: Math.floor(Math.random() * 15) + 85
           });
+        } else {
+          alert(`Automated Scan Error for '${username}': ${result.error}`);
         }
       }
     }
