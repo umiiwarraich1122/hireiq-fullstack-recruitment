@@ -450,34 +450,55 @@ export default function Dashboard() {
                       transition={{ delay: i * 0.1 }}
                       style={{ 
                         background: 'var(--bg-tab)', padding: '16px', borderRadius: '12px', 
-                        border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
                       }}
                     >
-                      <div>
-                        <h4 style={{ margin: '0 0 4px 0', color: 'var(--text-primary)', fontSize: '1.1rem' }}>{candidate.name}</h4>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                          <span className="tag tag-blue">score: {candidate.matchScore}%</span>
+                      <div style={{ flex: 1 }}>
+                        <h4 style={{ margin: '0 0 8px 0', color: 'var(--text-primary)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {candidate.name}
+                          {candidate.github && <span className="tag tag-green" style={{ fontSize: '0.75rem', padding: '2px 8px' }}>✓ Verified</span>}
+                        </h4>
+                        
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                          <span className="tag tag-blue">🧠 Score: {candidate.matchScore}%</span>
                           {candidate.github && (
                             <>
-                              <span className="tag tag-green">✓ GitHub Verified</span>
                               <span className="tag tag-yellow">⭐ {candidate.github.totalStars} Stars</span>
                               <span className="tag tag-blue">📚 {candidate.github.publicRepos} Repos</span>
-                              <span className="tag tag-gray">Top: {candidate.github.topLanguages.join(', ')}</span>
+                              <span className="tag tag-purple">👥 {candidate.github.followers} Followers</span>
+                              <span className="tag tag-gray">🗓️ Active since {candidate.github.createdAt}</span>
+                              {candidate.github.location && <span className="tag tag-dark">📍 {candidate.github.location}</span>}
                             </>
                           )}
                         </div>
+
+                        {candidate.github && (
+                          <div style={{ background: 'var(--bg-heavy)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            {candidate.github.bio && <div style={{ marginBottom: '8px', fontStyle: 'italic' }}>"{candidate.github.bio}"</div>}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <div><strong>Top Tech Stack:</strong> {candidate.github.topLanguages.length > 0 ? candidate.github.topLanguages.join(', ') : 'Not available'}</div>
+                              <div><strong>Latest Project:</strong> {candidate.github.latestRepo || 'No public repos'}</div>
+                              {candidate.github.company && <div><strong>Company:</strong> {candidate.github.company}</div>}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      {candidate.github && (
-                        <a 
-                          href={candidate.github.profileUrl} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          className="btn-outline" 
-                          style={{ textDecoration: 'none', padding: '8px 12px', fontSize: '0.85rem' }}
-                        >
-                          View GitHub
-                        </a>
-                      )}
+                      <div style={{ marginLeft: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {candidate.github && (
+                          <a 
+                            href={candidate.github.profileUrl} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="btn-glow" 
+                            style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '0.85rem', textAlign: 'center' }}
+                          >
+                            View GitHub
+                          </a>
+                        )}
+                        <button className="btn-outline" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                          Shortlist
+                        </button>
+                      </div>
                     </motion.div>
                   ))}
                 </div>

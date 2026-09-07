@@ -50,6 +50,12 @@ export const verifyGithubStats = async (username) => {
       totalStars,
       topLanguages,
       profileUrl: userData.html_url,
+      bio: userData.bio,
+      followers: userData.followers,
+      location: userData.location,
+      company: userData.company,
+      createdAt: new Date(userData.created_at).getFullYear(),
+      latestRepo: reposData.length > 0 ? reposData[0].name : null,
       verified: true
     };
 
