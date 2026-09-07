@@ -9,7 +9,37 @@ export default function NovaChatbot({ isOpen, onClose }) {
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Resizable Sidebar State
+  const [sidebarWidth, setSidebarWidth] = useState(450);
+  const [isDragging, setIsDragging] = useState(false);
   const textareaRef = useRef(null);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      const newWidth = window.innerWidth - e.clientX;
+      if (newWidth > 300 && newWidth < 900) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.body.style.userSelect = 'auto'; // Re-enable text selection
+    };
+
+    if (isDragging) {
+      document.body.style.userSelect = 'none'; // Prevent text highlighting while dragging
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   const handleInput = (e) => {
     setPrompt(e.target.value);
@@ -119,12 +149,25 @@ export default function NovaChatbot({ isOpen, onClose }) {
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
         style={{
           position: 'fixed', top: 0, right: 0, height: '100vh',
-          width: '450px', maxWidth: '100%',
+          width: `${sidebarWidth}px`, maxWidth: '100vw',
           background: 'var(--bg-deep)', borderLeft: '1px solid var(--glass-border)',
           boxShadow: '-10px 0 40px rgba(0,0,0,0.5)', zIndex: 1000,
           display: 'flex', flexDirection: 'column'
         }}
       >
+        {/* Resize Handle */}
+        <div 
+          onMouseDown={() => setIsDragging(true)}
+          style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px',
+            cursor: 'ew-resize', zIndex: 10,
+            background: isDragging ? 'var(--accent)' : 'transparent',
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={(e) => { if (!isDragging) e.target.style.background = 'rgba(255,255,255,0.1)' }}
+          onMouseLeave={(e) => { if (!isDragging) e.target.style.background = 'transparent' }}
+        />
+
         {/* Header */}
         <div style={{ 
           padding: '24px', borderBottom: '1px solid var(--glass-border)', 
