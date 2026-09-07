@@ -8,15 +8,6 @@ import { supabase } from '../config/supabaseClient';
 const candidates = [
   { id: 1, name: 'Ayesha K.', role: 'Senior Backend Engineer', score: 94, status: 'Interview', match: 'Excellent' },
   { id: 2, name: 'Bilal H.', role: 'Frontend Developer', score: 81, status: 'Screening', match: 'Good', flag: '9-month gap' },
-  { id: 3, name: 'Hamza T.', role: 'Senior Backend Engineer', score: 78, status: 'Rejected', flag: '0 GitHub Repos' },
-  { id: 4, name: 'Zainab M.', role: 'DevOps Engineer', score: 91, status: 'Verified', match: 'Strong' },
-];
-
-const stats = [
-  { label: 'Total Active Roles', value: '12' },
-  { label: 'Resumes Parsed (30d)', value: '1,420' },
-  { label: 'Candidates Verified', value: '384' },
-  { label: 'Pending Interviews', value: '28' },
 ];
 
 export default function Dashboard() {
@@ -25,6 +16,46 @@ export default function Dashboard() {
   const [session, setSession] = useState(null);
   const [emails, setEmails] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
+
+  const syncGmailCVs = async (token) => {
+    if (!token) return;
+    setIsSyncing(true);
+    try {
+      const searchRes = await fetch(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=has:attachment (resume OR cv)", 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const searchData = await searchRes.json();
+      
+      if (!searchData.messages || searchData.messages.length === 0) {
+        setIsSyncing(false);
+        return;
+      }
+
+      const messagesToFetch = searchData.messages.slice(0, 5);
+      const emailDetails = await Promise.all(
+        messagesToFetch.map(async (msg) => {
+          const msgRes = await fetch(
+            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const msgData = await msgRes.json();
+          
+          const subject = msgData.payload.headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+          const sender = msgData.payload.headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
+          
+          return { id: msg.id, subject, sender, snippet: msgData.snippet };
+        })
+      );
+      
+      setEmails(emailDetails);
+    } catch (err) {
+      console.error("Error fetching Gmail:", err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Auth Check and Reset Body Overflow
   useEffect(() => {
@@ -38,12 +69,12 @@ export default function Dashboard() {
       } else {
         setUser(session.user);
         setSession(session);
+        if (session.provider_token) syncGmailCVs(session.provider_token);
       }
     };
 
     fetchUser();
 
-    // Listen for auth changes (e.g. logout)
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT') {
         navigate('/login');
@@ -62,54 +93,12 @@ export default function Dashboard() {
     await supabase.auth.signOut();
   };
 
-  const syncGmailCVs = async () => {
-    if (!session?.provider_token) {
-      alert("Google Access Token missing. Please Sign Out and Login again to refresh permissions.");
-      return;
-    }
-    
-    setIsSyncing(true);
-    try {
-      // 1. Search for emails with attachments containing 'resume' or 'cv'
-      const searchRes = await fetch(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages?q=has:attachment (resume OR cv)", 
-        { headers: { Authorization: `Bearer ${session.provider_token}` } }
-      );
-      
-      const searchData = await searchRes.json();
-      
-      if (!searchData.messages || searchData.messages.length === 0) {
-        alert("No recent emails found with CV/Resume attachments.");
-        setIsSyncing(false);
-        return;
-      }
-
-      // 2. Fetch details for the first 5 emails
-      const messagesToFetch = searchData.messages.slice(0, 5);
-      const emailDetails = await Promise.all(
-        messagesToFetch.map(async (msg) => {
-          const msgRes = await fetch(
-            `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
-            { headers: { Authorization: `Bearer ${session.provider_token}` } }
-          );
-          const msgData = await msgRes.json();
-          
-          // Extract subject and sender from headers
-          const subject = msgData.payload.headers.find(h => h.name === 'Subject')?.value || 'No Subject';
-          const sender = msgData.payload.headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
-          
-          return { id: msg.id, subject, sender, snippet: msgData.snippet };
-        })
-      );
-      
-      setEmails(emailDetails);
-    } catch (err) {
-      console.error("Error fetching Gmail:", err);
-      alert("Failed to sync Gmail. Check console for details.");
-    } finally {
-      setIsSyncing(false);
-    }
-  };
+  const dynamicStats = [
+    { label: 'Resumes Found (Gmail)', value: emails.length },
+    { label: 'Pending Parsing', value: emails.length },
+    { label: 'Candidates Verified', value: '0' },
+    { label: 'Total Active Roles', value: '1' },
+  ];
 
   if (!user) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>Loading Dashboard...</div>;
 
@@ -169,7 +158,7 @@ export default function Dashboard() {
         <div className="dash-content">
           {/* Stats Row */}
           <div className="dash-stats">
-            {stats.map((s, i) => (
+            {dynamicStats.map((s, i) => (
               <motion.div 
                 key={s.label} 
                 className="dash-stat-card"
@@ -192,7 +181,7 @@ export default function Dashboard() {
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Automatically fetch emails containing CV/Resume attachments.</p>
             </div>
-            <button className="btn-glow" onClick={syncGmailCVs} disabled={isSyncing} style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button className="btn-glow" onClick={() => syncGmailCVs(session?.provider_token)} disabled={isSyncing} style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               {isSyncing ? 'Syncing...' : 'Sync Recent Resumes'}
             </button>
           </div>
