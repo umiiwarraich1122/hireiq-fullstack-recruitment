@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import logo from '../components/logo.jpg';
 import { supabase } from '../config/supabaseClient';
 
@@ -15,31 +15,34 @@ const decodeBase64 = (data) => {
   }
 };
 
+// Enhanced helper to recursively find the best email body (prefers HTML over Plain Text)
 const getEmailBody = (payload) => {
-  if (!payload) return 'No content';
+  let bodyHTML = '';
+  let bodyText = '';
   
-  // If it's a simple text/html or text/plain
-  if (payload.body && payload.body.data) {
-    return decodeBase64(payload.body.data);
-  }
-
-  // If it has parts (multipart email)
-  if (payload.parts && payload.parts.length > 0) {
-    // Try to find HTML first
-    let part = payload.parts.find(p => p.mimeType === 'text/html');
-    if (part && part.body && part.body.data) return decodeBase64(part.body.data);
-    
-    // Fallback to plain text
-    part = payload.parts.find(p => p.mimeType === 'text/plain');
-    if (part && part.body && part.body.data) return decodeBase64(part.body.data);
-    
-    // If nested parts exist
-    if (payload.parts[0].parts) {
-      return getEmailBody(payload.parts[0]);
+  const findBody = (part) => {
+    if (part.mimeType === 'text/html' && part.body && part.body.data) {
+      bodyHTML = decodeBase64(part.body.data);
+      return true;
     }
+    if (part.mimeType === 'text/plain' && part.body && part.body.data) {
+      bodyText = decodeBase64(part.body.data);
+    }
+    if (part.parts) {
+      for (let p of part.parts) {
+        if (findBody(p)) return true;
+      }
+    }
+    return false;
+  };
+
+  if (payload) findBody(payload);
+  
+  if (!bodyHTML && !bodyText && payload.body && payload.body.data) {
+    bodyHTML = decodeBase64(payload.body.data);
   }
   
-  return 'Message format not supported for preview.';
+  return bodyHTML || bodyText || 'Message format not supported for preview.';
 };
 
 export default function EmailPage() {
@@ -51,7 +54,7 @@ export default function EmailPage() {
   const [selectedEmail, setSelectedEmail] = useState(null);
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden'; // Keep layout fixed for app-like feel
+    document.body.style.overflow = 'hidden'; 
     
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -74,9 +77,8 @@ export default function EmailPage() {
     if (!providerToken) return;
     setIsLoading(true);
     try {
-      // Fetch latest 10 emails from INBOX
       const searchRes = await fetch(
-        "https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=15", 
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=20", 
         { headers: { Authorization: `Bearer ${providerToken}` } }
       );
       const searchData = await searchRes.json();
@@ -95,7 +97,7 @@ export default function EmailPage() {
           );
           const msgData = await msgRes.json();
           
-          const subject = msgData.payload.headers.find(h => h.name === 'Subject')?.value || 'No Subject';
+          const subject = msgData.payload.headers.find(h => h.name === 'Subject')?.value || '(No Subject)';
           const sender = msgData.payload.headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
           const date = msgData.payload.headers.find(h => h.name === 'Date')?.value || '';
           
@@ -147,7 +149,7 @@ export default function EmailPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="dash-main" style={{ display: 'flex', flexDirection: 'column' }}>
+      <main className="dash-main" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <header className="dash-header">
           <div>
             <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>HR Inbox</h1>
@@ -168,7 +170,7 @@ export default function EmailPage() {
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
           {/* Email List Pane */}
-          <div style={{ width: '400px', borderRight: '1px solid var(--glass-border)', overflowY: 'auto', background: 'var(--bg-card)' }}>
+          <div style={{ width: '400px', borderRight: '1px solid var(--glass-border)', overflowY: 'auto', background: 'var(--bg-card)', flexShrink: 0 }}>
             {isLoading ? (
               <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Syncing inbox...</div>
             ) : emails.length === 0 ? (
@@ -201,11 +203,18 @@ export default function EmailPage() {
           </div>
 
           {/* Email View Pane */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '30px', background: 'var(--bg-deep)' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-deep)', overflow: 'hidden' }}>
             {selectedEmail ? (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
-                  <h2 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)', fontSize: '1.6rem' }}>{selectedEmail.subject}</h2>
+              <motion.div 
+                key={selectedEmail.id}
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                transition={{ duration: 0.3 }}
+                style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '20px' }}
+              >
+                {/* Email Header */}
+                <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--glass-border)', flexShrink: 0 }}>
+                  <h2 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)', fontSize: '1.4rem' }}>{selectedEmail.subject}</h2>
                   <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                     <strong>From:</strong> {selectedEmail.sender}
                   </div>
@@ -214,11 +223,14 @@ export default function EmailPage() {
                   </div>
                 </div>
                 
-                {/* Full Message Body */}
-                <div 
-                  style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.6', background: 'var(--bg-card)', padding: '30px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}
-                  dangerouslySetInnerHTML={{ __html: selectedEmail.body }} 
-                />
+                {/* Full Message Body in an Iframe to isolate CSS and fix images */}
+                <div style={{ flex: 1, borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--glass-border)', background: '#ffffff' }}>
+                  <iframe 
+                    title="Email Content"
+                    srcDoc={selectedEmail.body}
+                    style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#ffffff' }}
+                  />
+                </div>
               </motion.div>
             ) : (
               <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
