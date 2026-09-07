@@ -96,42 +96,22 @@ export default function NovaChatbot({ isOpen, onClose }) {
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='var(--text-primary)'} onMouseOut={e => e.target.style.color='var(--text-secondary)'}>✕</button>
         </div>
 
-        {/* Scrollable Body Area */}
+        {/* Scrollable Output Area */}
         <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ marginBottom: '24px' }}>
-            <p style={{ margin: '0 0 12px 0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-              Describe the role you are hiring for, and Nova will generate a professional LinkedIn post for you.
-            </p>
-            <textarea 
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. we are hiring an AI engineer for Zylo Software 3 year experience RAG specialization..."
-              style={{
-                width: '100%', height: '120px', padding: '16px',
-                background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
-                borderRadius: '12px', color: 'var(--text-primary)',
-                fontFamily: 'inherit', fontSize: '0.95rem', resize: 'none', outline: 'none',
-                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)'
-              }}
-              onFocus={e => e.target.style.borderColor='var(--accent)'}
-              onBlur={e => e.target.style.borderColor='var(--glass-border)'}
-            />
-          </div>
-
-          <button 
-            className="btn-glow" 
-            onClick={generatePost} 
-            disabled={loading || !prompt.trim()}
-            style={{ width: '100%', padding: '14px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-          >
-            {loading ? 'Nova is thinking...' : 'Generate Job Post'}
-          </button>
+          {!response && !loading && (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+              <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                👋 Hi! I'm Nova.<br/>
+                Type the details of the job role below, and I'll generate a professional LinkedIn post for you.
+              </p>
+            </div>
+          )}
 
           {response && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ marginTop: '30px', display: 'flex', flexDirection: 'column', flex: 1 }}
+              style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <h3 style={{ margin: 0, color: 'var(--accent)', fontSize: '1rem' }}>Generated Post:</h3>
@@ -146,13 +126,40 @@ export default function NovaChatbot({ isOpen, onClose }) {
               <div style={{ 
                 background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', 
                 border: '1px solid var(--glass-border)', color: 'var(--text-primary)',
-                fontSize: '0.95rem', lineHeight: '1.6', flex: 1, overflowY: 'auto',
+                fontSize: '0.95rem', lineHeight: '1.6',
                 whiteSpace: 'pre-wrap'
               }}>
                 {response}
               </div>
             </motion.div>
           )}
+        </div>
+
+        {/* Bottom Input Area */}
+        <div style={{ padding: '20px 24px', borderTop: '1px solid var(--glass-border)', background: 'var(--bg-deep)' }}>
+          <textarea 
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g. Hiring an AI engineer for Zylo Software, 3 yrs exp, RAG..."
+            style={{
+              width: '100%', height: '100px', padding: '16px',
+              background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
+              borderRadius: '12px', color: 'var(--text-primary)',
+              fontFamily: 'inherit', fontSize: '0.95rem', resize: 'none', outline: 'none',
+              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
+              marginBottom: '12px'
+            }}
+            onFocus={e => e.target.style.borderColor='var(--accent)'}
+            onBlur={e => e.target.style.borderColor='var(--glass-border)'}
+          />
+          <button 
+            className="btn-glow" 
+            onClick={generatePost} 
+            disabled={loading || !prompt.trim()}
+            style={{ width: '100%', padding: '14px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+          >
+            {loading ? 'Nova is thinking...' : 'Generate Job Post'}
+          </button>
         </div>
       </motion.div>
     </AnimatePresence>
