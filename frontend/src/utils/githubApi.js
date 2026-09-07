@@ -45,22 +45,25 @@ export const verifyGithubStats = async (username) => {
       .slice(0, 3); // Get top 3 languages
 
     return {
-      username: userData.login,
-      publicRepos: userData.public_repos,
-      totalStars,
-      topLanguages,
-      profileUrl: userData.html_url,
-      bio: userData.bio,
-      followers: userData.followers,
-      location: userData.location,
-      company: userData.company,
-      createdAt: new Date(userData.created_at).getFullYear(),
-      latestRepo: reposData.length > 0 ? reposData[0].name : null,
-      verified: true
+      success: true,
+      data: {
+        username: userData.login,
+        publicRepos: userData.public_repos,
+        totalStars,
+        topLanguages,
+        profileUrl: userData.html_url,
+        bio: userData.bio,
+        followers: userData.followers,
+        location: userData.location,
+        company: userData.company,
+        createdAt: new Date(userData.created_at).getFullYear(),
+        latestRepo: reposData.length > 0 ? reposData[0].name : null,
+        verified: true
+      }
     };
 
   } catch (error) {
     console.error("GitHub Verification Error:", error);
-    return null;
+    return { success: false, error: error.message };
   }
 };

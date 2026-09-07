@@ -133,8 +133,9 @@ export default function Dashboard() {
       }
       
       if (username) {
-        const stats = await verifyGithubStats(username);
-        if (stats) {
+        const result = await verifyGithubStats(username);
+        if (result.success) {
+          const stats = result.data;
           results.push({
             id: email.id || Math.random().toString(),
             name: email.from ? email.from.split('<')[0].trim() : "Linus T. (Mocked Email)",
@@ -158,8 +159,9 @@ export default function Dashboard() {
     const username = extractGithubUsername(manualGitLink) || manualGitLink.replace('https://github.com/', '').replace('/', '').trim();
     
     if (username) {
-      const stats = await verifyGithubStats(username);
-      if (stats) {
+      const result = await verifyGithubStats(username);
+      if (result.success) {
+        const stats = result.data;
         setScannedCandidates(prev => [{
           id: Math.random().toString(),
           name: `${stats.username} (Manual Test)`,
@@ -167,7 +169,7 @@ export default function Dashboard() {
           matchScore: Math.floor(Math.random() * 10) + 90 // 90-99
         }, ...prev]);
       } else {
-        alert("⚠️ Could not fetch stats. Check if the GitHub username is correct or API rate limit is reached.");
+        alert(`⚠️ GitHub API Error for '${username}': ${result.error}\n(Try hard refreshing the page with Ctrl+Shift+R)`);
       }
     } else {
       alert("⚠️ Please enter a valid GitHub link or username.");
