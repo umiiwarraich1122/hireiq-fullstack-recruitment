@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Using API Key from environment variables to bypass GitHub secret scanning
@@ -8,6 +8,16 @@ export default function NovaChatbot({ isOpen, onClose }) {
   const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
+  const textareaRef = useRef(null);
+
+  const handleInput = (e) => {
+    setPrompt(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '50px'; // Reset height temporarily
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 250)}px`; // Max 250px
+    }
+  };
 
   const generatePost = async () => {
     if (!prompt.trim()) return;
@@ -22,8 +32,7 @@ export default function NovaChatbot({ isOpen, onClose }) {
           "Authorization": `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          // Using llama3-8b-8192 as it is extremely fast and uses fewer tokens
-          model: "llama3-8b-8192",
+          model: "llama-3.1-8b-instant", // Updated to the latest stable fast model
           messages: [
             { 
               role: "system", 
@@ -40,14 +49,15 @@ export default function NovaChatbot({ isOpen, onClose }) {
       });
       
       const data = await res.json();
-      if (data.choices && data.choices.length > 0) {
+      
+      if (res.ok && data.choices && data.choices.length > 0) {
         setResponse(data.choices[0].message.content);
       } else {
-        setResponse("Received an empty response. Please try again.");
+        setResponse(`Groq API Error: ${data.error?.message || JSON.stringify(data) || 'Unknown error'}`);
       }
     } catch (err) {
       console.error(err);
-      setResponse("Error generating post. Please check your connection or API limit.");
+      setResponse(`Network or code error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -138,16 +148,17 @@ export default function NovaChatbot({ isOpen, onClose }) {
         {/* Bottom Input Area */}
         <div style={{ padding: '20px 24px', borderTop: '1px solid var(--glass-border)', background: 'var(--bg-deep)' }}>
           <textarea 
+            ref={textareaRef}
             value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={handleInput}
             placeholder="e.g. Hiring an AI engineer for Zylo Software, 3 yrs exp, RAG..."
             style={{
-              width: '100%', height: '100px', padding: '16px',
+              width: '100%', minHeight: '60px', padding: '16px',
               background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
               borderRadius: '12px', color: 'var(--text-primary)',
               fontFamily: 'inherit', fontSize: '0.95rem', resize: 'none', outline: 'none',
               boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
-              marginBottom: '12px'
+              marginBottom: '12px', overflowY: 'auto'
             }}
             onFocus={e => e.target.style.borderColor='var(--accent)'}
             onBlur={e => e.target.style.borderColor='var(--glass-border)'}
