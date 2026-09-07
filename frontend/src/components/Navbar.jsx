@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import ThemeToggle from './ThemeToggle';
-import logo from './logo.jpg';
+import logo from './hireiq_logo.jpg';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);

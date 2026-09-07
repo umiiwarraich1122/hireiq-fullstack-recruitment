@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import { useEffect, useState } from 'react';
-import logo from '../components/logo.jpg';
+import logo from '../components/hireiq_logo.jpg';
 import { supabase } from '../config/supabaseClient';
 import NovaChatbot from '../components/NovaChatbot';
 import JobRoleModal from '../components/JobRoleModal';

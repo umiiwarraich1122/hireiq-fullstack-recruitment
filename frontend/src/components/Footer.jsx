@@ -1,4 +1,4 @@
-import logo from './logo.jpg';
+import logo from './hireiq_logo.jpg';
 
 export default function Footer() {
   return (
