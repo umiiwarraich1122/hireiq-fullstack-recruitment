@@ -32,7 +32,7 @@ export default function NovaChatbot({ isOpen, onClose }) {
           "Authorization": `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama-3.1-8b-instant", // Updated to the latest stable fast model
+          model: "llama3-8b-8192", // Using the universally accessible fast model
           messages: [
             { 
               role: "system", 
