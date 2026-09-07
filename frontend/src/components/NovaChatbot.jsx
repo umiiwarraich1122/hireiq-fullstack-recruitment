@@ -67,7 +67,7 @@ export default function NovaChatbot({ isOpen, onClose }) {
           "Authorization": `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama3-8b-8192", 
+          model: "openai/gpt-oss-20b", 
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userMessage }
@@ -98,7 +98,7 @@ export default function NovaChatbot({ isOpen, onClose }) {
             "Authorization": `Bearer ${CEREBRAS_API_KEY}`
           },
           body: JSON.stringify({
-            model: "llama3.1-8b",
+            model: "gpt-oss-120b",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: userMessage }
