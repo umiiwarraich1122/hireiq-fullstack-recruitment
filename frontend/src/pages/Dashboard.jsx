@@ -366,6 +366,8 @@ export default function Dashboard() {
                 <button className="join-btn" disabled>Waiting</button>
               </div>
             </div>
+          </div>
+          
           {/* AI Screening Pipeline */}
           <div className="card" style={{ marginTop: '24px', gridColumn: '1 / -1' }}>
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
