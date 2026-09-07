@@ -5,10 +5,7 @@ import { useEffect, useState } from 'react';
 import logo from '../components/logo.jpg';
 import { supabase } from '../config/supabaseClient';
 
-const candidates = [
-  { id: 1, name: 'Ayesha K.', role: 'Senior Backend Engineer', score: 94, status: 'Interview', match: 'Excellent' },
-  { id: 2, name: 'Bilal H.', role: 'Frontend Developer', score: 81, status: 'Screening', match: 'Good', flag: '9-month gap' },
-];
+const candidates = []; // Removed dummy candidates for a clean state
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -100,7 +97,7 @@ export default function Dashboard() {
     { label: 'Resumes Found (Gmail)', value: emails.length },
     { label: 'Pending Parsing', value: emails.length },
     { label: 'Candidates Verified', value: '0' },
-    { label: 'Total Active Roles', value: '1' },
+    { label: 'Total Active Roles', value: '0' },
   ];
 
   if (!user) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>Loading Dashboard...</div>;
@@ -226,41 +223,42 @@ export default function Dashboard() {
           </div>
 
           <div className="candidate-list">
-            {candidates.map((c, i) => (
-              <motion.div 
-                key={c.id} 
-                className="candidate-row"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + (i * 0.1) }}
-              >
-                <div className="c-info">
-                  <div className="c-avatar">{c.name.charAt(0)}</div>
-                  <div>
-                    <div className="c-name">{c.name}</div>
-                    <div className="c-role">{c.role}</div>
+            {candidates.length === 0 ? (
+              <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-heavy)', borderRadius: '12px', border: '1px dashed var(--glass-border)' }}>
+                No candidates verified yet. Sync emails to start parsing resumes.
+              </div>
+            ) : (
+              candidates.map((c, i) => (
+                <motion.div 
+                  key={c.id} 
+                  className="candidate-row"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <div className="c-info">
+                    <div className="c-avatar">{c.name.charAt(0)}</div>
+                    <div>
+                      <div className="c-name">{c.name}</div>
+                      <div className="c-role">{c.role}</div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="c-score">
-                  <div className="score-val" style={{ color: c.score > 85 ? 'var(--green)' : 'var(--accent)' }}>{c.score}% Match</div>
-                  <div className="score-bar">
-                    <div className="score-fill" style={{ width: `${c.score}%`, background: c.score > 85 ? 'var(--green)' : 'var(--accent)' }} />
+                  <div className="c-score">
+                    <div className="score-val">{c.score}% Match</div>
+                    <div className="score-bar">
+                      <div className="score-fill" style={{ width: `${c.score}%`, background: 'var(--green)' }}></div>
+                    </div>
                   </div>
-                </div>
-
-                <div className="c-tags">
-                  {c.flag && <span className="tag tag-yellow">⚠ {c.flag}</span>}
-                  <span className={`tag ${c.status === 'Verified' ? 'tag-green' : c.status === 'Rejected' ? 'tag-red' : 'tag-blue'}`}>
-                    {c.status}
-                  </span>
-                </div>
-                
-                <div className="c-actions">
-                  <button className="btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>Review</button>
-                </div>
-              </motion.div>
-            ))}
+                  <div className="c-tags">
+                    <span className="tag tag-green">{c.match}</span>
+                    {c.flag && <span className="tag tag-yellow">{c.flag}</span>}
+                  </div>
+                  <div className="c-actions">
+                    <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>View</button>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
 
           {/* AI Activity Log */}
