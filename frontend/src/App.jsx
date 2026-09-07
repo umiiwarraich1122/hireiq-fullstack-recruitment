@@ -5,6 +5,7 @@ import CursorGlow from './components/CursorGlow';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import AuthPage from './pages/AuthPage';
+import EmailPage from './pages/EmailPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/emails" element={<EmailPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

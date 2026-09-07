@@ -126,6 +126,9 @@ export default function Dashboard() {
           <a href="#" className="dash-link active">
             <span>⊞</span> Overview
           </a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
+            <span>✉️</span> Inbox
+          </a>
           <a href="#" className="dash-link">
             <span>👥</span> Candidates
           </a>
