@@ -149,6 +149,34 @@ export default function Dashboard() {
     setIsScanning(false);
   };
 
+  const [manualGitLink, setManualGitLink] = useState('');
+  const testManualGitLink = async () => {
+    if (!manualGitLink.trim()) return;
+    setIsScanning(true);
+    
+    // Extract username from link, or just use the input if it's already a username
+    const username = extractGithubUsername(manualGitLink) || manualGitLink.replace('https://github.com/', '').replace('/', '').trim();
+    
+    if (username) {
+      const stats = await verifyGithubStats(username);
+      if (stats) {
+        setScannedCandidates(prev => [{
+          id: Math.random().toString(),
+          name: `${stats.username} (Manual Test)`,
+          github: stats,
+          matchScore: Math.floor(Math.random() * 10) + 90 // 90-99
+        }, ...prev]);
+      } else {
+        alert("⚠️ Could not fetch stats. Check if the GitHub username is correct or API rate limit is reached.");
+      }
+    } else {
+      alert("⚠️ Please enter a valid GitHub link or username.");
+    }
+    
+    setIsScanning(false);
+    setManualGitLink('');
+  };
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
@@ -370,19 +398,42 @@ export default function Dashboard() {
           
           {/* AI Screening Pipeline */}
           <div className="card" style={{ marginTop: '24px', gridColumn: '1 / -1' }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span className="role-label" style={{ fontSize: '1.1rem' }}>🤖 AI Candidate Screening</span>
                 <span className="meta-label">Verifies GitHub & Experience</span>
               </div>
-              <button 
-                className="btn-glow" 
-                onClick={runAIScreening} 
-                disabled={isScanning || emails.length === 0}
-                style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-              >
-                {isScanning ? 'Scanning...' : 'Scan Inbox with AI'}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {/* Manual Tester */}
+                <input 
+                  type="text" 
+                  placeholder="Paste GitHub Profile Link or Username"
+                  value={manualGitLink}
+                  onChange={(e) => setManualGitLink(e.target.value)}
+                  style={{
+                    padding: '8px 12px', background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
+                    borderRadius: '8px', color: 'var(--text-primary)', outline: 'none', width: '220px', fontSize: '0.85rem'
+                  }}
+                />
+                <button 
+                  className="btn-outline" 
+                  onClick={testManualGitLink} 
+                  disabled={isScanning || !manualGitLink.trim()}
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  {isScanning ? 'Checking...' : 'Test Manual Link'}
+                </button>
+                <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)', margin: '0 8px' }} />
+                {/* Auto Inbox Scanner */}
+                <button 
+                  className="btn-glow" 
+                  onClick={runAIScreening} 
+                  disabled={isScanning || emails.length === 0}
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  {isScanning ? 'Scanning...' : 'Scan Inbox with AI'}
+                </button>
+              </div>
             </div>
             <div className="card-body" style={{ padding: '24px' }}>
               {scannedCandidates.length === 0 ? (
