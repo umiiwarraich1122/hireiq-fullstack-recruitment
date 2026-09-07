@@ -4,6 +4,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import { useEffect, useState } from 'react';
 import logo from '../components/logo.jpg';
 import { supabase } from '../config/supabaseClient';
+import NovaChatbot from '../components/NovaChatbot';
 
 const candidates = []; // Removed dummy candidates for a clean state
 
@@ -13,6 +14,7 @@ export default function Dashboard() {
   const [session, setSession] = useState(null);
   const [emails, setEmails] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const syncGmailCVs = async (token) => {
     if (!token) return;
@@ -145,7 +147,10 @@ export default function Dashboard() {
           </div>
           <div className="dash-header-actions">
             <ThemeToggle />
-            <button className="btn-glow" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>+ New Job Role</button>
+            <button className="btn-glow" onClick={() => setIsChatOpen(true)} style={{ padding: '10px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>✨</span> Nova (AI Post Generator)
+            </button>
+            <button className="btn-outline" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>+ New Job Role</button>
             <button className="btn-outline" onClick={handleLogout} style={{ padding: '10px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
               Sign Out
             </button>
@@ -306,6 +311,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      <NovaChatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
     </div>
   );
 }
