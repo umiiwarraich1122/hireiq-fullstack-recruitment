@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import logo from '../components/logo.jpg';
 import { supabase } from '../config/supabaseClient';
 import NovaChatbot from '../components/NovaChatbot';
+import JobRoleModal from '../components/JobRoleModal';
 
 const candidates = []; // Removed dummy candidates for a clean state
 
@@ -15,6 +16,8 @@ export default function Dashboard() {
   const [emails, setEmails] = useState([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [activeRolesCount, setActiveRolesCount] = useState(0);
 
   const syncGmailCVs = async (token) => {
     if (!token) return;
@@ -71,6 +74,7 @@ export default function Dashboard() {
       } else {
         setUser(session.user);
         setSession(session);
+        fetchJobRolesCount();
         if (session.provider_token) syncGmailCVs(session.provider_token);
       }
     };
@@ -83,6 +87,7 @@ export default function Dashboard() {
       } else if (session) {
         setUser(session.user);
         setSession(session);
+        fetchJobRolesCount();
       }
     });
 
@@ -90,6 +95,21 @@ export default function Dashboard() {
       authListener.subscription.unsubscribe();
     };
   }, [navigate]);
+
+  const fetchJobRolesCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('job_roles')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'Active');
+      
+      if (!error && count !== null) {
+        setActiveRolesCount(count);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -99,7 +119,7 @@ export default function Dashboard() {
     { label: 'Resumes Found (Gmail)', value: emails.length },
     { label: 'Pending Parsing', value: emails.length },
     { label: 'Candidates Verified', value: '0' },
-    { label: 'Total Active Roles', value: '0' },
+    { label: 'Total Active Roles', value: activeRolesCount },
   ];
 
   if (!user) return <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>Loading Dashboard...</div>;
@@ -150,7 +170,7 @@ export default function Dashboard() {
             <button className="btn-glow" onClick={() => setIsChatOpen(true)} style={{ padding: '10px 20px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span>✨</span> Nova (AI Post Generator)
             </button>
-            <button className="btn-outline" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>+ New Job Role</button>
+            <button className="btn-outline" onClick={() => setIsJobModalOpen(true)} style={{ padding: '10px 20px', fontSize: '0.85rem' }}>+ New Job Role</button>
             <button className="btn-outline" onClick={handleLogout} style={{ padding: '10px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
               Sign Out
             </button>
@@ -312,6 +332,12 @@ export default function Dashboard() {
         </div>
       </main>
       <NovaChatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <JobRoleModal 
+        isOpen={isJobModalOpen} 
+        onClose={() => setIsJobModalOpen(false)} 
+        user={user} 
+        onJobAdded={fetchJobRolesCount} 
+      />
     </div>
   );
 }
