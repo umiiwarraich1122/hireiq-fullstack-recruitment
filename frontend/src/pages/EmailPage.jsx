@@ -73,9 +73,16 @@ export default function EmailPage() {
     navigate('/login');
   };
 
+  const [errorMsg, setErrorMsg] = useState('');
+
   const fetchInbox = async (providerToken) => {
-    if (!providerToken) return;
+    if (!providerToken) {
+      setErrorMsg('Gmail connection expired. Please Sign Out and Sign In again to read your emails.');
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
+    setErrorMsg('');
     try {
       const searchRes = await fetch(
         "https://gmail.googleapis.com/gmail/v1/users/me/messages?labelIds=INBOX&maxResults=20", 
@@ -170,13 +177,19 @@ export default function EmailPage() {
         <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           
           {/* Email List Pane */}
-          <div style={{ width: '400px', borderRight: '1px solid var(--glass-border)', overflowY: 'auto', background: 'var(--bg-card)', flexShrink: 0 }}>
-            {isLoading ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Syncing inbox...</div>
-            ) : emails.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>No emails found.</div>
-            ) : (
-              emails.map((email) => (
+          <div className="email-list" style={{ width: '400px', borderRight: '1px solid var(--glass-border)', overflowY: 'auto', background: 'var(--bg-card)', flexShrink: 0 }}>
+          {isLoading ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Loading your inbox...</div>
+          ) : errorMsg ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--red)' }}>
+              ⚠️ {errorMsg}
+              <br/><br/>
+              <button className="btn-outline" onClick={handleLogout} style={{ borderColor: 'var(--red)', color: 'var(--red)', margin: '0 auto' }}>Sign Out</button>
+            </div>
+          ) : emails.length === 0 ? (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>No emails found.</div>
+          ) : (
+            emails.map((email) => (
                 <div 
                   key={email.id} 
                   onClick={() => setSelectedEmail(email)}
