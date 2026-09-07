@@ -31,16 +31,34 @@ export default function AuthPage() {
     }
   };
 
-  // Ensure strict no-scroll on this page
+  // Ensure strict no-scroll on this page and auto-redirect if logged in
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
     window.scrollTo(0, 0);
+
+    // Auto-redirect if already authenticated
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/dashboard');
+      }
+    };
+    checkUser();
+
+    // Listen for OAuth redirect completion
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        navigate('/dashboard');
+      }
+    });
+
     return () => {
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
+      authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="auth-page-layout">
