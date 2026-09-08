@@ -10,7 +10,7 @@ export const analyzeResumeText = async (resumeText, targetRole = "Software Devel
     apiKey = import.meta.env.VITE_GROQ_API_KEY;
     if (!apiKey) throw new Error("Groq API key is missing");
     endpoint = "https://api.groq.com/openai/v1/chat/completions";
-    modelName = "llama3-8b-8192";
+    modelName = "llama-3.1-8b-instant";
   }
 
   const prompt = `You are an HR AI assistant. Evaluate this resume for the role: "${targetRole}".
