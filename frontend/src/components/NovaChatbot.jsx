@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../config/supabaseClient';
 
-const CEREBRAS_API_KEY = import.meta.env.VITE_CEREBRAS_API_KEY;
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
 export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSenders = "", user }) {
   const [input, setInput] = useState('');
@@ -123,26 +123,26 @@ RULES:
     let aiResponseContent = "";
 
     try {
-      const cerebrasRes = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${CEREBRAS_API_KEY}`
+          "Authorization": `Bearer ${GROQ_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama3.1-8b", 
+          model: "openai/gpt-oss-20b", 
           messages: llmMessages,
           temperature: 0.7
         })
       });
-      const cerebrasData = await cerebrasRes.json();
-      if (cerebrasRes.ok && cerebrasData.choices) {
-        aiResponseContent = cerebrasData.choices[0].message.content;
+      const groqData = await groqRes.json();
+      if (groqRes.ok && groqData.choices) {
+        aiResponseContent = groqData.choices[0].message.content;
       } else {
-        throw new Error(cerebrasData.error?.message || "Cerebras API failed.");
+        throw new Error(groqData.error?.message || "Groq API failed.");
       }
     } catch (err) {
-      aiResponseContent = `Network Error: Cerebras AI service failed.`;
+      aiResponseContent = `Network Error: Groq AI service failed.`;
     }
 
     const aiMsg = { role: 'assistant', content: aiResponseContent };
