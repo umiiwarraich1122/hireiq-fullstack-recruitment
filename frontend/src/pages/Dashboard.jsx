@@ -151,6 +151,14 @@ export default function Dashboard() {
   };
 
   const [scanMessage, setScanMessage] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (text, type = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  };
 
   const runAIScreening = async () => {
     try {
@@ -235,10 +243,10 @@ export default function Dashboard() {
           matchScore: Math.floor(Math.random() * 10) + 90 // 90-99
         }, ...prev]);
       } else {
-        alert(`⚠️ GitHub API Error for '${username}': ${result.error}\n(Try hard refreshing the page with Ctrl+Shift+R)`);
+        showToast(`GitHub API Error for '${username}': ${result.error}`, 'error');
       }
     } else {
-      alert("⚠️ Please enter a valid GitHub link or username.");
+      showToast("Please enter a valid GitHub link or username.", 'error');
     }
     
     setIsScanning(false);
@@ -261,9 +269,9 @@ export default function Dashboard() {
       }]);
       if (error) throw error;
       
-      alert(`${candidate.name} has been shortlisted and saved!`);
+      showToast(`${candidate.name} has been shortlisted and saved!`, 'success');
     } catch (err) {
-      alert(`Error shortlisting candidate: ${err.message}\n\nPlease create a 'candidates' table in Supabase with these columns: id, name, job_role, match_score, skills (jsonb), summary, github_stats (jsonb).`);
+      showToast(`Error: ${err.message}`, 'error');
     }
   };
 
@@ -666,6 +674,32 @@ export default function Dashboard() {
         user={user} 
         onJobAdded={fetchJobRoles} 
       />
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, x: '-50%' }}
+          animate={{ opacity: 1, y: 0, x: '-50%' }}
+          style={{
+            position: 'fixed',
+            bottom: '40px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: toastMessage.type === 'error' ? 'var(--red)' : 'var(--green)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: '30px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            zIndex: 9999,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {toastMessage.type === 'error' ? '⚠️' : '✅'} {toastMessage.text}
+        </motion.div>
+      )}
     </div>
   );
 }
