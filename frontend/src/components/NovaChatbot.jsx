@@ -4,7 +4,7 @@ import { supabase } from '../config/supabaseClient';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, user }) {
+export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSenders = "", user }) {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -89,11 +89,11 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, user }) 
     // Fetch live dashboard context
     let candidatesContext = "No candidates shortlisted yet.";
     try {
-      const { data, error } = await supabase.from('candidates').select('name, job_role, match_score, skills, github_stats');
+      const { data, error } = await supabase.from('candidates').select('name, job_role, match_score, skills, github_stats, summary');
       if (!error && data && data.length > 0) {
         candidatesContext = data.map(c => 
-          `- Name: ${c.name}, Role: ${c.job_role}, Match: ${c.match_score}%, Skills: ${c.skills?.join(', ')}, GitHub/Contact Info: ${c.github_stats?.profileUrl || 'None'}`
-        ).join('\n');
+          `- Name: ${c.name}\n  Role: ${c.job_role}\n  Match: ${c.match_score}%\n  Skills: ${c.skills?.join(', ')}\n  Summary: ${c.summary}\n  GitHub/Contact Info: ${c.github_stats?.profileUrl || 'None'}`
+        ).join('\n\n');
       }
     } catch (e) { }
 
@@ -104,12 +104,13 @@ Your purpose is to answer the user's questions about their recruitment pipeline,
 
 CURRENT DASHBOARD CONTEXT:
 - Resumes/Emails currently in the inbox waiting to be scanned: ${emailsCount}
+- Names of people who sent the emails in the inbox: ${inboxSenders || "None"}
 - Shortlisted Candidates Database:
 ${candidatesContext}
 
 RULES:
 1. Answer questions about the candidates based ONLY on the context provided above.
-2. If asked about contact info or GitHub, provide the URL from the context.
+2. If the user asks for details not in the context (like education), politely explain that this specific information was not extracted by the AI parser, but provide the summary/skills that ARE available.
 3. If the user asks you to write a job post, create a short, professional LinkedIn post with emojis.
 4. Be conversational, helpful, and concise. Remember previous messages in this conversation.`
     };
