@@ -1,8 +1,8 @@
-export const analyzeResumeText = async (resumeText) => {
+export const analyzeResumeText = async (resumeText, targetRole = "Software Developer") => {
   const apiKey = import.meta.env.VITE_GROQ_API_KEY;
   if (!apiKey) throw new Error("Groq API key is missing");
 
-  const prompt = `You are an expert HR AI assistant. Your job is to extract specific information from the provided resume text.
+  const prompt = `You are an expert HR AI assistant. Your job is to extract specific information from the provided resume text and evaluate how well the candidate matches the target job role: "${targetRole}".
 Extract the following information and return ONLY a valid JSON object. Do not include markdown formatting like \`\`\`json.
 {
   "name": "Candidate's full name, or null if not found",
@@ -10,8 +10,8 @@ Extract the following information and return ONLY a valid JSON object. Do not in
   "linkedin": "LinkedIn profile URL, or null",
   "skills": ["Array", "of", "top", "skills", "found"],
   "experience_years": "Estimated total years of experience as an integer, or null",
-  "match_score": "An integer between 1 and 100 representing the overall quality, formatting, and completeness of the candidate's profile. Evaluate strictly based on the content.",
-  "summary": "A 2-sentence summary of the candidate's profile"
+  "match_score": "An integer between 1 and 100 representing how well the candidate's skills and experience match the target role '${targetRole}'. Evaluate strictly based on the content.",
+  "summary": "A 2-sentence summary of the candidate's profile, highlighting relevance to '${targetRole}'."
 }
 
 Resume Text:

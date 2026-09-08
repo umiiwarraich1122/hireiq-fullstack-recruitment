@@ -21,6 +21,8 @@ export default function Dashboard() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [activeRolesCount, setActiveRolesCount] = useState(0);
+  const [jobRoles, setJobRoles] = useState([]);
+  const [selectedJobRole, setSelectedJobRole] = useState('');
   const [scannedCandidates, setScannedCandidates] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
 
@@ -79,8 +81,8 @@ export default function Dashboard() {
       );
       
       setEmails(emailDetails);
-    } catch (err) {
-      console.error("Error fetching Gmail:", err);
+    } catch (error) {
+      console.error("Error syncing Gmail:", error);
     } finally {
       setIsSyncing(false);
     }
@@ -92,13 +94,13 @@ export default function Dashboard() {
     document.documentElement.style.overflow = 'unset';
 
     const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
         navigate('/login');
       } else {
         setUser(session.user);
         setSession(session);
-        fetchJobRolesCount();
+        fetchJobRoles();
         if (session.provider_token) syncGmailCVs(session.provider_token);
       }
     };
@@ -111,7 +113,7 @@ export default function Dashboard() {
       } else if (session) {
         setUser(session.user);
         setSession(session);
-        fetchJobRolesCount();
+        fetchJobRoles();
       }
     });
 
@@ -120,15 +122,20 @@ export default function Dashboard() {
     };
   }, [navigate]);
 
-  const fetchJobRolesCount = async () => {
+  const fetchJobRoles = async () => {
     try {
-      const { count, error } = await supabase
+      const { data, count, error } = await supabase
         .from('job_roles')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('status', 'Active');
       
-      if (!error && count !== null) {
-        setActiveRolesCount(count);
+      if (!error && data) {
+        setJobRoles(data);
+        setActiveRolesCount(count || data.length);
+        if (data.length > 0) {
+          // If no role is selected yet, default to the first active role
+          setSelectedJobRole(prev => prev || data[0].title);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -165,7 +172,7 @@ export default function Dashboard() {
         const pdfText = await extractTextFromPDFBase64(attData.data);
         
         setScanMessage({ type: 'info', text: `Analyzing CV with Groq AI for ${email.sender}...` });
-        const aiResult = await analyzeResumeText(pdfText);
+        const aiResult = await analyzeResumeText(pdfText, selectedJobRole || "Software Developer");
         
         let githubStats = null;
         if (aiResult.github_username) {
@@ -181,6 +188,7 @@ export default function Dashboard() {
           name: aiResult.name || email.sender.split('<')[0].trim(),
           github: githubStats,
           matchScore: aiResult.match_score || 0,
+          targetRole: selectedJobRole || "Software Developer",
           skills: aiResult.skills || [],
           summary: aiResult.summary || "No summary available.",
           experience: aiResult.experience_years
@@ -478,6 +486,22 @@ export default function Dashboard() {
                 >
                   {isScanning ? 'Checking...' : 'Test Manual Link'}
                 </button>
+                {/* Job Role Selector */}
+                <select 
+                  value={selectedJobRole}
+                  onChange={(e) => setSelectedJobRole(e.target.value)}
+                  style={{
+                    padding: '8px 12px', background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
+                    borderRadius: '8px', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem'
+                  }}
+                  title="Target Job Role for AI Match Score"
+                >
+                  {jobRoles.map(role => (
+                    <option key={role.id} value={role.title}>{role.title}</option>
+                  ))}
+                  {jobRoles.length === 0 && <option value="Software Engineer">Software Engineer (Default)</option>}
+                </select>
+
                 <div style={{ width: '1px', height: '24px', background: 'var(--glass-border)', margin: '0 8px' }} />
                 {/* Auto Inbox Scanner */}
                 <button 
@@ -534,7 +558,7 @@ export default function Dashboard() {
                         </h4>
                         
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                          <span className="tag tag-blue">🤖 Match Score: {candidate.matchScore}%</span>
+                          <span className="tag tag-blue" title={`Scored for: ${candidate.targetRole}`}>🤖 Match Score: {candidate.matchScore}%</span>
                           {candidate.experience !== null && candidate.experience !== undefined && (
                             <span className="tag tag-purple">💼 {candidate.experience} Yrs Exp</span>
                           )}
@@ -570,26 +594,32 @@ export default function Dashboard() {
                           <div style={{ background: 'var(--bg-heavy)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             {candidate.github.bio && <div style={{ marginBottom: '8px', fontStyle: 'italic' }}>"{candidate.github.bio}"</div>}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <div><strong>Top Tech Stack:</strong> {candidate.github.topLanguages.length > 0 ? candidate.github.topLanguages.join(', ') : 'Not available'}</div>
-                              <div><strong>Latest Project:</strong> {candidate.github.latestRepo || 'No public repos'}</div>
-                              {candidate.github.company && <div><strong>Company:</strong> {candidate.github.company}</div>}
+                              <div style={{ fontWeight: 600 }}>Top Languages:</div>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                {candidate.github.topLanguages.map(l => (
+                                  <span key={l.name} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: l.color }}></span>
+                                    {l.name}
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         )}
                       </div>
-                      <div style={{ marginLeft: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginLeft: '20px' }}>
                         {candidate.github && (
                           <a 
                             href={candidate.github.profileUrl} 
                             target="_blank" 
                             rel="noreferrer"
-                            className="btn-glow" 
-                            style={{ textDecoration: 'none', padding: '8px 16px', fontSize: '0.85rem', textAlign: 'center' }}
+                            className="btn-outline" 
+                            style={{ padding: '8px 16px', fontSize: '0.85rem', textDecoration: 'none', textAlign: 'center' }}
                           >
                             View GitHub
                           </a>
                         )}
-                        <button className="btn-outline" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                        <button className="btn-glow" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
                           Shortlist
                         </button>
                       </div>
@@ -606,7 +636,7 @@ export default function Dashboard() {
         isOpen={isJobModalOpen} 
         onClose={() => setIsJobModalOpen(false)} 
         user={user} 
-        onJobAdded={fetchJobRolesCount} 
+        onJobAdded={fetchJobRoles} 
       />
     </div>
   );
