@@ -123,48 +123,26 @@ RULES:
     let aiResponseContent = "";
 
     try {
-      // Trying Local Ollama first
-      const ollamaRes = await fetch("http://localhost:11434/v1/chat/completions", {
+      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${GROQ_API_KEY}`
+        },
         body: JSON.stringify({
-          model: "llama3.2:3b",
+          model: "llama3-8b-8192", 
           messages: llmMessages,
           temperature: 0.7
         })
       });
-
-      if (ollamaRes.ok) {
-        const data = await ollamaRes.json();
-        aiResponseContent = data.choices[0].message.content;
+      const groqData = await groqRes.json();
+      if (groqRes.ok && groqData.choices) {
+        aiResponseContent = groqData.choices[0].message.content;
+      } else {
+        aiResponseContent = `Error: ${groqData.error?.message || "Groq API failed."}`;
       }
-    } catch (e) {
-      console.log("Local Ollama failed, falling back to Groq");
-    }
-
-    if (!aiResponseContent) {
-      try {
-        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${GROQ_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "llama3-8b-8192", 
-            messages: llmMessages,
-            temperature: 0.7
-          })
-        });
-        const groqData = await groqRes.json();
-        if (groqRes.ok && groqData.choices) {
-          aiResponseContent = groqData.choices[0].message.content;
-        } else {
-          aiResponseContent = `Error: ${groqData.error?.message || "Both Ollama and Groq failed."}`;
-        }
-      } catch (err) {
-        aiResponseContent = `Network Error: Both AI services failed.`;
-      }
+    } catch (err) {
+      aiResponseContent = `Network Error: Groq AI service failed.`;
     }
 
     const aiMsg = { role: 'assistant', content: aiResponseContent };

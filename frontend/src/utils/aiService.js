@@ -1,6 +1,6 @@
 export const analyzeResumeText = async (resumeText, targetRole = "Software Developer") => {
   // Use Local Ollama for development, switch back to Groq for production
-  const isLocal = true; 
+  const isLocal = false; 
   
   let apiKey = "ollama"; // Dummy key for Ollama
   let endpoint = "http://localhost:11434/v1/chat/completions";
@@ -10,7 +10,7 @@ export const analyzeResumeText = async (resumeText, targetRole = "Software Devel
     apiKey = import.meta.env.VITE_GROQ_API_KEY;
     if (!apiKey) throw new Error("Groq API key is missing");
     endpoint = "https://api.groq.com/openai/v1/chat/completions";
-    modelName = "openai/gpt-oss-20b";
+    modelName = "llama3-8b-8192";
   }
 
   const prompt = `You are an HR AI assistant. Evaluate this resume for the role: "${targetRole}".
