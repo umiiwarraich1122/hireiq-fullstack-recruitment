@@ -421,8 +421,14 @@ export default function Dashboard() {
                 />
                 <button 
                   className="btn-outline" 
-                  onClick={testManualGitLink} 
-                  disabled={isScanning || !manualGitLink.trim()}
+                  onClick={() => {
+                    if (!manualGitLink.trim()) {
+                      alert("Please enter a GitHub link or username first.");
+                      return;
+                    }
+                    testManualGitLink();
+                  }} 
+                  disabled={isScanning}
                   style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                 >
                   {isScanning ? 'Checking...' : 'Test Manual Link'}
@@ -431,8 +437,14 @@ export default function Dashboard() {
                 {/* Auto Inbox Scanner */}
                 <button 
                   className="btn-glow" 
-                  onClick={runAIScreening} 
-                  disabled={isScanning || emails.length === 0}
+                  onClick={() => {
+                    if (emails.length === 0) {
+                      alert("No resumes found to scan! Please sync your Gmail inbox first by clicking 'Sync Recent Resumes' above.");
+                      return;
+                    }
+                    runAIScreening();
+                  }} 
+                  disabled={isScanning}
                   style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                 >
                   {isScanning ? 'Scanning...' : 'Scan Inbox with AI'}
