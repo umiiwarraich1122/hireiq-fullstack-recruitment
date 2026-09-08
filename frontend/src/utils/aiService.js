@@ -1,6 +1,17 @@
 export const analyzeResumeText = async (resumeText, targetRole = "Software Developer") => {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (!apiKey) throw new Error("Groq API key is missing");
+  // Use Local Ollama for development, switch back to Groq for production
+  const isLocal = true; 
+  
+  let apiKey = "ollama"; // Dummy key for Ollama
+  let endpoint = "http://localhost:11434/v1/chat/completions";
+  let modelName = "llama3.2:3b";
+
+  if (!isLocal) {
+    apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    if (!apiKey) throw new Error("Groq API key is missing");
+    endpoint = "https://api.groq.com/openai/v1/chat/completions";
+    modelName = "openai/gpt-oss-20b";
+  }
 
   const prompt = `You are an expert HR AI assistant. Your job is to extract specific information from the provided resume text and evaluate how well the candidate matches the target job role: "${targetRole}".
 Extract the following information and return ONLY a valid JSON object. Do not include markdown formatting like \`\`\`json.
@@ -18,14 +29,14 @@ Resume Text:
 ${resumeText}`;
 
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
+        model: modelName,
         temperature: 0.0,
         messages: [
           { role: "system", content: "You extract structured data from resumes and output only valid JSON." },
@@ -36,7 +47,7 @@ ${resumeText}`;
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Groq Error (${res.status}): ${errText}`);
+      throw new Error(`AI API Error (${res.status}): ${errText}`);
     }
     
     const data = await res.json();

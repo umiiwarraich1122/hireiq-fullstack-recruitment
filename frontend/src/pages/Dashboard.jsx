@@ -180,7 +180,7 @@ export default function Dashboard() {
         addActivity('Resume Parser Agent', `Extracted PDF text for ${email.sender.split('<')[0].trim()}`, 'green');
         const pdfText = await extractTextFromPDFBase64(attData.data);
         
-        setScanMessage({ type: 'info', text: `Analyzing CV with Groq AI for ${email.sender}...` });
+        setScanMessage({ type: 'info', text: `Analyzing CV with Local AI (${selectedJobRole || 'Target Role'}) for ${email.sender}...` });
         addActivity('Matching Agent', `Evaluating skills against '${selectedJobRole || "Target Role"}'`, 'blue');
         const aiResult = await analyzeResumeText(pdfText, selectedJobRole || "Software Developer");
         
