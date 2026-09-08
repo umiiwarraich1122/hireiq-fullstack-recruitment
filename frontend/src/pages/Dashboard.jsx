@@ -249,6 +249,24 @@ export default function Dashboard() {
     await supabase.auth.signOut();
   };
 
+  const handleShortlist = async (candidate) => {
+    try {
+      const { error } = await supabase.from('candidates').insert([{
+        name: candidate.name,
+        job_role: candidate.targetRole || "Candidate",
+        match_score: candidate.matchScore,
+        skills: candidate.skills,
+        summary: candidate.summary,
+        github_stats: candidate.github
+      }]);
+      if (error) throw error;
+      
+      alert(`${candidate.name} has been shortlisted and saved!`);
+    } catch (err) {
+      alert(`Error shortlisting candidate: ${err.message}\n\nPlease create a 'candidates' table in Supabase with these columns: id, name, job_role, match_score, skills (jsonb), summary, github_stats (jsonb).`);
+    }
+  };
+
   const dynamicStats = [
     { label: 'Resumes Found (Gmail)', value: emails.length },
     { label: 'Pending Parsing', value: emails.length },
@@ -274,7 +292,7 @@ export default function Dashboard() {
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
             <span>✉️</span> Inbox
           </a>
-          <a href="#" className="dash-link">
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
             <span>👥</span> Candidates
           </a>
           <a href="#" className="dash-link">
@@ -629,7 +647,7 @@ export default function Dashboard() {
                             View GitHub
                           </a>
                         )}
-                        <button className="btn-glow" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                        <button className="btn-glow" onClick={() => handleShortlist(candidate)} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
                           Shortlist
                         </button>
                       </div>

@@ -6,6 +6,7 @@ import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import AuthPage from './pages/AuthPage';
 import EmailPage from './pages/EmailPage';
+import Candidates from './pages/Candidates';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/login" element={<AuthPage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/emails" element={<EmailPage />} />
+          <Route path="/candidates" element={<Candidates />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
