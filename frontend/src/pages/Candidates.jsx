@@ -31,7 +31,23 @@ export default function Candidates() {
         .order('match_score', { ascending: false });
       
       if (error) throw error;
-      setCandidates(data || []);
+      
+      const ensureArray = (val) => {
+        if (Array.isArray(val)) {
+          return val.map(item => typeof item === 'string' ? item : JSON.stringify(item));
+        }
+        if (typeof val === 'string') {
+          return val.split(',').map(s => s.trim());
+        }
+        return [];
+      };
+
+      const safeData = (data || []).map(c => ({
+        ...c,
+        skills: ensureArray(c.skills)
+      }));
+
+      setCandidates(safeData);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message);
