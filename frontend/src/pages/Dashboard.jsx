@@ -184,16 +184,19 @@ export default function Dashboard() {
         }
         processedEmails.add(rawEmail.toLowerCase());
 
-        // Check if candidate already exists in Supabase
+        const currentTargetRole = selectedJobRole || "Software Developer";
+
+        // Check if candidate already exists in Supabase FOR THIS SPECIFIC ROLE
         const { data: existingCandidate } = await supabase
           .from('candidates')
           .select('id')
           .ilike('email', `%${rawEmail}%`)
+          .eq('job_role', currentTargetRole)
           .limit(1);
 
         if (existingCandidate && existingCandidate.length > 0) {
-          setScanMessage({ type: 'info', text: `Skipped duplicate: ${rawEmail} is already in candidates list.` });
-          addActivity('Duplicate Filter', `Skipped duplicate CV from ${rawEmail}`, 'orange');
+          setScanMessage({ type: 'info', text: `Skipped duplicate: ${rawEmail} is already scanned for ${currentTargetRole}.` });
+          addActivity('Duplicate Filter', `Skipped CV from ${rawEmail} for ${currentTargetRole}`, 'orange');
           continue; // Skip processing this email
         }
         
