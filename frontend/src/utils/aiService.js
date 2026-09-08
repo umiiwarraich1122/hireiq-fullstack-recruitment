@@ -1,6 +1,6 @@
 export const analyzeResumeText = async (resumeText) => {
-  const apiKey = import.meta.env.VITE_CEREBRAS_API_KEY;
-  if (!apiKey) throw new Error("Cerebras API key is missing");
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+  if (!apiKey) throw new Error("Groq API key is missing");
 
   const prompt = `You are an expert HR AI assistant. Your job is to extract specific information from the provided resume text.
 Extract the following information and return ONLY a valid JSON object. Do not include markdown formatting like \`\`\`json.
@@ -17,14 +17,14 @@ Resume Text:
 ${resumeText}`;
 
   try {
-    const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-oss-120b",
+        model: "openai/gpt-oss-20b",
         messages: [
           { role: "system", content: "You extract structured data from resumes and output only valid JSON." },
           { role: "user", content: prompt }
@@ -35,7 +35,7 @@ ${resumeText}`;
 
     if (!res.ok) {
       const errText = await res.text();
-      throw new Error(`Cerebras Error (${res.status}): ${errText}`);
+      throw new Error(`Groq Error (${res.status}): ${errText}`);
     }
     
     const data = await res.json();

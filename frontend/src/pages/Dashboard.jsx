@@ -164,7 +164,7 @@ export default function Dashboard() {
         setScanMessage({ type: 'info', text: `Extracting text from PDF for ${email.sender}...` });
         const pdfText = await extractTextFromPDFBase64(attData.data);
         
-        setScanMessage({ type: 'info', text: `Analyzing CV with Cerebras AI for ${email.sender}...` });
+        setScanMessage({ type: 'info', text: `Analyzing CV with Groq AI for ${email.sender}...` });
         const aiResult = await analyzeResumeText(pdfText);
         
         let githubStats = null;
