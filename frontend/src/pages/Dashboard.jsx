@@ -114,9 +114,11 @@ export default function Dashboard() {
     }
   };
 
+  const [scanMessage, setScanMessage] = useState(null);
+
   const runAIScreening = async () => {
     try {
-      alert(`Starting scan... Found ${emails.length} emails to process.`);
+      setScanMessage({ type: 'info', text: `Starting scan... Found ${emails.length} emails to process.` });
       setIsScanning(true);
       const results = [];
       
@@ -127,30 +129,29 @@ export default function Dashboard() {
       for (const email of emails) {
         let username = extractGithubUsername(email.snippet || '');
         
-        if (!username && results.length === 0) {
-          username = "torvalds"; // Linus Torvalds profile as a fallback demonstration
-        }
-        
+        // Remove the fake fallback. Only process if a real username is found in the snippet.
         if (username) {
           const result = await verifyGithubStats(username);
           if (result && result.success) {
             const stats = result.data;
             results.push({
               id: email.id || Math.random().toString(),
-              name: email.sender ? email.sender.split('<')[0].trim() : "Linus T. (Mocked Email)",
+              name: email.sender ? email.sender.split('<')[0].trim() : "Candidate",
               github: stats,
               matchScore: Math.floor(Math.random() * 15) + 85
             });
           } else {
-            alert(`API Error for '${username}': ${result ? result.error : 'Unknown API Failure'}`);
+            setScanMessage({ type: 'error', text: `API Error for '${username}': ${result ? result.error : 'Unknown API Failure'}` });
+            setIsScanning(false);
+            return; // Stop scan on error
           }
         }
       }
       
       setScannedCandidates(results);
-      alert(`Scan complete! Added ${results.length} candidates to the UI.`);
+      setScanMessage({ type: 'success', text: `Scan complete! Added ${results.length} candidates.` });
     } catch (err) {
-      alert(`CRITICAL ERROR during scan: ${err.message}`);
+      setScanMessage({ type: 'error', text: `CRITICAL ERROR during scan: ${err.message}` });
       console.error(err);
     } finally {
       setIsScanning(false);
@@ -428,7 +429,7 @@ export default function Dashboard() {
                   className="btn-outline" 
                   onClick={() => {
                     if (!manualGitLink.trim()) {
-                      alert("Please enter a GitHub link or username first.");
+                      setScanMessage({ type: 'error', text: "Please enter a GitHub link or username first." });
                       return;
                     }
                     testManualGitLink();
@@ -444,7 +445,7 @@ export default function Dashboard() {
                   className="btn-glow" 
                   onClick={() => {
                     if (emails.length === 0) {
-                      alert("No resumes found to scan! Please sync your Gmail inbox first by clicking 'Sync Recent Resumes' above.");
+                      setScanMessage({ type: 'error', text: "No resumes found to scan! Please sync your Gmail inbox first by clicking 'Sync Recent Resumes' above." });
                       return;
                     }
                     runAIScreening();
@@ -456,6 +457,19 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+
+            {scanMessage && (
+              <div style={{
+                padding: '12px 16px', marginBottom: '20px', borderRadius: '8px', fontSize: '0.9rem',
+                background: scanMessage.type === 'error' ? 'rgba(239, 68, 68, 0.1)' : scanMessage.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)',
+                color: scanMessage.type === 'error' ? '#EF4444' : scanMessage.type === 'success' ? '#10B981' : '#6366f1',
+                border: `1px solid ${scanMessage.type === 'error' ? '#EF4444' : scanMessage.type === 'success' ? '#10B981' : '#6366f1'}`
+              }}>
+                {scanMessage.type === 'error' ? '⚠️ ' : scanMessage.type === 'success' ? '✅ ' : 'ℹ️ '}
+                {scanMessage.text}
+              </div>
+            )}
+
             <div className="card-body" style={{ padding: '24px' }}>
               {scannedCandidates.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px' }}>
