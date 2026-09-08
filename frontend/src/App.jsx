@@ -8,6 +8,7 @@ import AuthPage from './pages/AuthPage';
 import EmailPage from './pages/EmailPage';
 import Candidates from './pages/Candidates';
 import OpenRoles from './pages/OpenRoles';
+import Analytics from './pages/Analytics';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/emails" element={<EmailPage />} />
           <Route path="/candidates" element={<Candidates />} />
           <Route path="/open-roles" element={<OpenRoles />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

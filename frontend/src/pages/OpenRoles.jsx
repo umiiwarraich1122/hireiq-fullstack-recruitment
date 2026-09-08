@@ -104,6 +104,9 @@ export default function OpenRoles() {
           <a href="#" className="dash-link active">
             <span>💼</span> Open Roles
           </a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>
+            <span>📈</span> Analytics
+          </a>
         </nav>
       </aside>
 

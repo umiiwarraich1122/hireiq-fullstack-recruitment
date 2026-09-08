@@ -334,8 +334,8 @@ export default function Dashboard() {
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
             <span>💼</span> Open Roles
           </a>
-          <a href="#" className="dash-link">
-            <span>📊</span> Analytics
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>
+            <span>📈</span> Analytics
           </a>
           <a href="#" className="dash-link">
             <span>⚙️</span> Settings
