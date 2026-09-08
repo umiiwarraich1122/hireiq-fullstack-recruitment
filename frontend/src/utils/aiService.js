@@ -38,6 +38,7 @@ ${resumeText}`;
       body: JSON.stringify({
         model: modelName,
         temperature: 0.0,
+        seed: 42,
         messages: [
           { role: "system", content: "You extract structured data from resumes and output only valid JSON." },
           { role: "user", content: prompt }
