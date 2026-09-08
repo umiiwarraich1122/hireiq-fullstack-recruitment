@@ -202,21 +202,34 @@ export default function Dashboard() {
           }
         }
         
-        const ensureArray = (val) => Array.isArray(val) ? val : (typeof val === 'string' ? val.split(',').map(s=>s.trim()) : []);
+        const ensureArray = (val) => {
+          if (Array.isArray(val)) {
+            return val.map(item => typeof item === 'string' ? item : JSON.stringify(item));
+          }
+          if (typeof val === 'string') {
+            return val.split(',').map(s => s.trim());
+          }
+          return [];
+        };
+
+        const safeName = typeof aiResult.name === 'string' ? aiResult.name : email.sender.split('<')[0].trim();
+        const safeExperience = (aiResult.experience_years !== null && typeof aiResult.experience_years === 'object') 
+          ? JSON.stringify(aiResult.experience_years) 
+          : aiResult.experience_years;
 
         results.push({
           id: email.id || Math.random().toString(),
-          name: aiResult.name || email.sender.split('<')[0].trim(),
-          email: aiResult.email || null,
-          phone: aiResult.phone || null,
+          name: safeName,
+          email: typeof aiResult.email === 'string' ? aiResult.email : null,
+          phone: typeof aiResult.phone === 'string' ? aiResult.phone : null,
           education: ensureArray(aiResult.education),
           projects: ensureArray(aiResult.projects),
           github: githubStats,
-          matchScore: aiResult.match_score || 0,
+          matchScore: typeof aiResult.match_score === 'number' ? aiResult.match_score : parseInt(aiResult.match_score) || 0,
           targetRole: selectedJobRole || "Software Developer",
           skills: ensureArray(aiResult.skills),
-          summary: aiResult.summary || "No summary available.",
-          experience: aiResult.experience_years
+          summary: typeof aiResult.summary === 'string' ? aiResult.summary : "No summary available.",
+          experience: safeExperience
         });
       }
       
