@@ -13,12 +13,16 @@ export const analyzeResumeText = async (resumeText, targetRole = "Software Devel
     modelName = "openai/gpt-oss-20b";
   }
 
-  const prompt = `You are an expert HR AI assistant. Your job is to extract specific information from the provided resume text and evaluate how well the candidate matches the target job role: "${targetRole}".
+  const prompt = `You are an expert HR AI assistant. Your job is to extract comprehensive information from the provided resume text and evaluate how well the candidate matches the target job role: "${targetRole}".
 Extract the following information and return ONLY a valid JSON object. Do not include markdown formatting like \`\`\`json.
 {
   "name": "Candidate's full name, or null if not found",
+  "email": "Candidate's email address, or null",
+  "phone": "Candidate's phone number, or null",
   "github_username": "The candidate's GitHub username if a github.com link is found, otherwise null",
   "linkedin": "LinkedIn profile URL, or null",
+  "education": ["Array of degrees and universities, e.g. 'BSc Computer Science from XYZ University'"],
+  "projects": ["Array of short descriptions of key projects"],
   "skills": ["Array", "of", "top", "skills", "found"],
   "experience_years": "Estimated total years of experience as an integer, or null",
   "match_score": "An integer between 1 and 100 representing how well the candidate's skills and experience match the target role '${targetRole}'. Evaluate strictly based on the content.",

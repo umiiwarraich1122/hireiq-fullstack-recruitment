@@ -89,10 +89,10 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
     // Fetch live dashboard context
     let candidatesContext = "No candidates shortlisted yet.";
     try {
-      const { data, error } = await supabase.from('candidates').select('name, job_role, match_score, skills, github_stats, summary');
+      const { data, error } = await supabase.from('candidates').select('name, email, phone, job_role, match_score, skills, education, projects, github_stats, summary');
       if (!error && data && data.length > 0) {
         candidatesContext = data.map(c => 
-          `- Name: ${c.name}\n  Role: ${c.job_role}\n  Match: ${c.match_score}%\n  Skills: ${c.skills?.join(', ')}\n  Summary: ${c.summary}\n  GitHub/Contact Info: ${c.github_stats?.profileUrl || 'None'}`
+          `- Name: ${c.name}\n  Role: ${c.job_role}\n  Match: ${c.match_score}%\n  Contact: ${c.email || 'N/A'}, ${c.phone || 'N/A'}\n  Education: ${c.education ? c.education.join(', ') : 'None extracted'}\n  Projects: ${c.projects ? c.projects.join(', ') : 'None extracted'}\n  Skills: ${c.skills?.join(', ')}\n  Summary: ${c.summary}\n  GitHub Profile: ${c.github_stats?.profileUrl || 'None'}`
         ).join('\n\n');
       }
     } catch (e) { }

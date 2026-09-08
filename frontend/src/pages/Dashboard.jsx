@@ -261,9 +261,13 @@ export default function Dashboard() {
     try {
       const { error } = await supabase.from('candidates').insert([{
         name: candidate.name,
+        email: candidate.email || null,
+        phone: candidate.phone || null,
         job_role: candidate.targetRole || "Candidate",
         match_score: candidate.matchScore,
         skills: candidate.skills,
+        education: candidate.education || [],
+        projects: candidate.projects || [],
         summary: candidate.summary,
         github_stats: candidate.github
       }]);
@@ -271,7 +275,7 @@ export default function Dashboard() {
       
       showToast(`${candidate.name} has been shortlisted and saved!`, 'success');
     } catch (err) {
-      showToast(`Error: ${err.message}`, 'error');
+      showToast(`Error: ${err.message}. Make sure to add the new columns (email, phone, education, projects) to Supabase!`, 'error');
     }
   };
 
