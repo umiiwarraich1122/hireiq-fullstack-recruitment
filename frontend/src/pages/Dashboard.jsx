@@ -7,6 +7,8 @@ import { supabase } from '../config/supabaseClient';
 import NovaChatbot from '../components/NovaChatbot';
 import JobRoleModal from '../components/JobRoleModal';
 import { extractGithubUsername, verifyGithubStats } from '../utils/githubApi';
+import { extractTextFromPDFBase64 } from '../utils/pdfParser';
+import { analyzeResumeText } from '../utils/aiService';
 
 const candidates = []; // Removed dummy candidates for a clean state
 
@@ -21,6 +23,24 @@ export default function Dashboard() {
   const [activeRolesCount, setActiveRolesCount] = useState(0);
   const [scannedCandidates, setScannedCandidates] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+
+  const getAttachments = (payload) => {
+    let attachments = [];
+    if (!payload || !payload.parts) return attachments;
+    for (let part of payload.parts) {
+      if (part.filename && part.body && part.body.attachmentId && part.filename.toLowerCase().endsWith('.pdf')) {
+        attachments.push({
+          filename: part.filename,
+          mimeType: part.mimeType,
+          attachmentId: part.body.attachmentId
+        });
+      }
+      if (part.parts) {
+        attachments = attachments.concat(getAttachments(part));
+      }
+    }
+    return attachments;
+  };
 
   const syncGmailCVs = async (token) => {
     if (!token) return;
@@ -52,8 +72,9 @@ export default function Dashboard() {
           
           const subject = msgData.payload.headers.find(h => h.name === 'Subject')?.value || 'No Subject';
           const sender = msgData.payload.headers.find(h => h.name === 'From')?.value || 'Unknown Sender';
+          const attachments = getAttachments(msgData.payload);
           
-          return { id: msg.id, subject, sender, snippet: msgData.snippet };
+          return { id: msg.id, subject, sender, snippet: msgData.snippet, attachments };
         })
       );
       
@@ -122,34 +143,52 @@ export default function Dashboard() {
       setIsScanning(true);
       const results = [];
       
-      // Simulate processing time
-      await new Promise(r => setTimeout(r, 1000));
-
-      // Loop through emails fetched from Gmail
       for (const email of emails) {
-        let username = extractGithubUsername(email.snippet || '');
+        if (!email.attachments || email.attachments.length === 0) {
+          continue; // Skip emails without PDFs
+        }
         
-        // Remove the fake fallback. Only process if a real username is found in the snippet.
-        if (username) {
-          const result = await verifyGithubStats(username);
-          if (result && result.success) {
-            const stats = result.data;
-            results.push({
-              id: email.id || Math.random().toString(),
-              name: email.sender ? email.sender.split('<')[0].trim() : "Candidate",
-              github: stats,
-              matchScore: Math.floor(Math.random() * 15) + 85
-            });
-          } else {
-            setScanMessage({ type: 'error', text: `API Error for '${username}': ${result ? result.error : 'Unknown API Failure'}` });
-            setIsScanning(false);
-            return; // Stop scan on error
+        const attachment = email.attachments[0]; // Process the first PDF attachment
+        
+        setScanMessage({ type: 'info', text: `Fetching PDF CV for ${email.sender}...` });
+        const attRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${email.id}/attachments/${attachment.attachmentId}`, {
+          headers: { Authorization: `Bearer ${session.provider_token}` }
+        });
+        const attData = await attRes.json();
+        
+        if (!attData.data) {
+          setScanMessage({ type: 'error', text: `Failed to download PDF data for ${email.sender}` });
+          continue;
+        }
+
+        setScanMessage({ type: 'info', text: `Extracting text from PDF for ${email.sender}...` });
+        const pdfText = await extractTextFromPDFBase64(attData.data);
+        
+        setScanMessage({ type: 'info', text: `Analyzing CV with Cerebras AI for ${email.sender}...` });
+        const aiResult = await analyzeResumeText(pdfText);
+        
+        let githubStats = null;
+        if (aiResult.github_username) {
+          setScanMessage({ type: 'info', text: `Verifying GitHub profile: ${aiResult.github_username}...` });
+          const ghRes = await verifyGithubStats(aiResult.github_username);
+          if (ghRes && ghRes.success) {
+            githubStats = ghRes.data;
           }
         }
+        
+        results.push({
+          id: email.id || Math.random().toString(),
+          name: aiResult.name || email.sender.split('<')[0].trim(),
+          github: githubStats,
+          matchScore: Math.floor(Math.random() * 15) + 85, // Mock score for now
+          skills: aiResult.skills || [],
+          summary: aiResult.summary || "No summary available.",
+          experience: aiResult.experience_years
+        });
       }
       
       setScannedCandidates(results);
-      setScanMessage({ type: 'success', text: `Scan complete! Added ${results.length} candidates.` });
+      setScanMessage({ type: 'success', text: `Scan complete! Processed ${results.length} resumes.` });
     } catch (err) {
       setScanMessage({ type: 'error', text: `CRITICAL ERROR during scan: ${err.message}` });
       console.error(err);
@@ -495,19 +534,39 @@ export default function Dashboard() {
                         </h4>
                         
                         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                          <span className="tag tag-blue">🧠 Score: {candidate.matchScore}%</span>
+                          <span className="tag tag-blue">🤖 Match Score: {candidate.matchScore}%</span>
+                          {candidate.experience !== null && candidate.experience !== undefined && (
+                            <span className="tag tag-purple">💼 {candidate.experience} Yrs Exp</span>
+                          )}
                           {candidate.github && (
                             <>
                               <span className="tag tag-yellow">⭐ {candidate.github.totalStars} Stars</span>
                               <span className="tag tag-blue">📚 {candidate.github.publicRepos} Repos</span>
                               <span className="tag tag-purple">👥 {candidate.github.followers} Followers</span>
-                              <span className="tag tag-gray">🗓️ Active since {candidate.github.createdAt}</span>
+                              <span className="tag tag-gray">📅 Active since {candidate.github.createdAt}</span>
                               {candidate.github.location && <span className="tag tag-dark">📍 {candidate.github.location}</span>}
                             </>
                           )}
                         </div>
 
-                        {candidate.github && (
+                        {candidate.summary && (
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 12px 0', lineHeight: '1.5' }}>
+                            {candidate.summary}
+                          </p>
+                        )}
+
+                        {candidate.skills && candidate.skills.length > 0 && (
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                            {candidate.skills.slice(0, 6).map(skill => (
+                              <span key={skill} style={{ background: 'var(--bg-card)', border: '1px solid var(--glass-border)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', color: 'var(--text-primary)' }}>
+                                {skill}
+                              </span>
+                            ))}
+                            {candidate.skills.length > 6 && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', alignSelf: 'center' }}>+{candidate.skills.length - 6} more</span>}
+                          </div>
+                        )}
+
+                        {candidate.github && candidate.github.topLanguages && candidate.github.topLanguages.length > 0 && (
                           <div style={{ background: 'var(--bg-heavy)', padding: '12px', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             {candidate.github.bio && <div style={{ marginBottom: '8px', fontStyle: 'italic' }}>"{candidate.github.bio}"</div>}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
