@@ -10,6 +10,7 @@ Extract the following information and return ONLY a valid JSON object. Do not in
   "linkedin": "LinkedIn profile URL, or null",
   "skills": ["Array", "of", "top", "skills", "found"],
   "experience_years": "Estimated total years of experience as an integer, or null",
+  "match_score": "An integer between 1 and 100 representing the overall quality, formatting, and completeness of the candidate's profile. Evaluate strictly based on the content.",
   "summary": "A 2-sentence summary of the candidate's profile"
 }
 
@@ -25,11 +26,11 @@ ${resumeText}`;
       },
       body: JSON.stringify({
         model: "openai/gpt-oss-20b",
+        temperature: 0.0,
         messages: [
           { role: "system", content: "You extract structured data from resumes and output only valid JSON." },
           { role: "user", content: prompt }
-        ],
-        temperature: 0.1
+        ]
       }),
     });
 

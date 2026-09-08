@@ -180,7 +180,7 @@ export default function Dashboard() {
           id: email.id || Math.random().toString(),
           name: aiResult.name || email.sender.split('<')[0].trim(),
           github: githubStats,
-          matchScore: Math.floor(Math.random() * 15) + 85, // Mock score for now
+          matchScore: aiResult.match_score || 0,
           skills: aiResult.skills || [],
           summary: aiResult.summary || "No summary available.",
           experience: aiResult.experience_years
