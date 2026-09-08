@@ -1,17 +1,6 @@
 export const analyzeResumeText = async (resumeText, targetRole = "Software Developer") => {
-  // Use Local Ollama for development, switch back to Groq for production
-  const isLocal = false; 
-  
-  let apiKey = "ollama"; // Dummy key for Ollama
-  let endpoint = "http://localhost:11434/v1/chat/completions";
-  let modelName = "llama3.2:3b";
-
-  if (!isLocal) {
-    apiKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (!apiKey) throw new Error("Groq API key is missing");
-    endpoint = "https://api.groq.com/openai/v1/chat/completions";
-    modelName = "llama-3.1-8b-instant";
-  }
+  const CEREBRAS_API_KEY = import.meta.env.VITE_CEREBRAS_API_KEY;
+  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
   const prompt = `You are an HR AI assistant. Evaluate this resume for the role: "${targetRole}".
 Return ONLY a valid JSON object.
@@ -31,35 +20,46 @@ Return ONLY a valid JSON object.
 Resume Text:
 ${resumeText}`;
 
-  try {
-    const payload = {
-      model: modelName,
-      temperature: 0.0,
-      seed: 42,
-      messages: [
-        { role: "system", content: "You extract structured data from resumes and output strictly valid JSON." },
-        { role: "user", content: prompt }
-      ]
-    };
-    
-    // Force JSON mode for Ollama to prevent formatting hallucinations
-    if (isLocal) payload.format = "json";
-
+  const callAI = async (endpoint, apiKey, model) => {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        model: model,
+        temperature: 0.0,
+        seed: 42,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "You extract structured data from resumes and output strictly valid JSON." },
+          { role: "user", content: prompt }
+        ]
+      }),
     });
-
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`AI API Error (${res.status}): ${errText}`);
+      const err = await res.text();
+      throw new Error(err);
+    }
+    return res.json();
+  };
+
+  try {
+    let data;
+    try {
+      // Primary: Cerebras (Extremely Fast)
+      data = await callAI("https://api.cerebras.ai/v1/chat/completions", CEREBRAS_API_KEY, "llama3.1-8b");
+    } catch (err1) {
+      console.warn("Cerebras API failed, falling back to Groq:", err1);
+      try {
+        // Fallback: Groq
+        data = await callAI("https://api.groq.com/openai/v1/chat/completions", GROQ_API_KEY, "llama-3.1-8b-instant");
+      } catch (err2) {
+        throw new Error("Both Cerebras and Groq APIs failed. " + err2.message);
+      }
     }
     
-    const data = await res.json();
     let jsonString = data.choices[0].message.content;
     
     if (jsonString.includes('```')) {
