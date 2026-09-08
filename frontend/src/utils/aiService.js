@@ -69,7 +69,21 @@ ${resumeText}`;
       jsonString = jsonString.substring(firstBrace, lastBrace + 1);
     }
     
-    return JSON.parse(jsonString);
+    // Attempt to fix common small-model JSON errors (like trailing commas)
+    jsonString = jsonString.replace(/,\s*([}\]])/g, '$1');
+    
+    try {
+      return JSON.parse(jsonString);
+    } catch (parseError) {
+      console.warn("JSON Parse failed for AI output. Attempting to return a partial object. Raw output:", jsonString);
+      return {
+        name: "Formatting Error",
+        match_score: 0,
+        skills: [],
+        summary: "The AI model failed to format the resume details correctly.",
+        experience_years: null
+      };
+    }
   } catch (error) {
     console.error("AI Analysis Error:", error);
     throw new Error(error.message);
