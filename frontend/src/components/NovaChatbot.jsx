@@ -132,7 +132,7 @@ RULES:
           "Authorization": `Bearer ${CEREBRAS_API_KEY}`
         },
         body: JSON.stringify({
-          model: "llama3.1-8b", 
+          model: "gpt-oss-120b", 
           messages: llmMessages,
           temperature: 0.7
         })
@@ -154,7 +154,7 @@ RULES:
             "Authorization": `Bearer ${GROQ_API_KEY}`
           },
           body: JSON.stringify({
-            model: "llama-3.1-8b-instant", 
+            model: "openai/gpt-oss-20b", 
             messages: llmMessages,
             temperature: 0.7
           })

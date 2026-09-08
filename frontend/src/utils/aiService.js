@@ -49,12 +49,12 @@ ${resumeText}`;
     let data;
     try {
       // Primary: Cerebras (Extremely Fast)
-      data = await callAI("https://api.cerebras.ai/v1/chat/completions", CEREBRAS_API_KEY, "llama3.1-8b");
+      data = await callAI("https://api.cerebras.ai/v1/chat/completions", CEREBRAS_API_KEY, "gpt-oss-120b");
     } catch (err1) {
       console.warn("Cerebras API failed, falling back to Groq:", err1);
       try {
         // Fallback: Groq
-        data = await callAI("https://api.groq.com/openai/v1/chat/completions", GROQ_API_KEY, "llama-3.1-8b-instant");
+        data = await callAI("https://api.groq.com/openai/v1/chat/completions", GROQ_API_KEY, "openai/gpt-oss-20b");
       } catch (err2) {
         throw new Error("Both Cerebras and Groq APIs failed. " + err2.message);
       }
