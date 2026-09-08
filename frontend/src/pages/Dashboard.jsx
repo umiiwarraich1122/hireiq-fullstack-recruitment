@@ -258,6 +258,8 @@ export default function Dashboard() {
   };
 
   const handleShortlist = async (candidate) => {
+    if (shortlistingIds[candidate.id]) return;
+    setShortlistingIds(prev => ({ ...prev, [candidate.id]: true }));
     try {
       const { error } = await supabase.from('candidates').insert([{
         name: candidate.name,
@@ -276,6 +278,8 @@ export default function Dashboard() {
       showToast(`${candidate.name} has been shortlisted and saved!`, 'success');
     } catch (err) {
       showToast(`Error: ${err.message}. Make sure to add the new columns (email, phone, education, projects) to Supabase!`, 'error');
+    } finally {
+      setShortlistingIds(prev => ({ ...prev, [candidate.id]: false }));
     }
   };
 
@@ -659,9 +663,21 @@ export default function Dashboard() {
                             View GitHub
                           </a>
                         )}
-                        <button className="btn-glow" onClick={() => handleShortlist(candidate)} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-                          Shortlist
-                        </button>
+                          <button 
+                            className="btn-glow" 
+                            onClick={() => handleShortlist(candidate)} 
+                            disabled={shortlistingIds[candidate.id]}
+                            style={{ 
+                              padding: '8px 16px', 
+                              fontSize: '0.85rem',
+                              opacity: shortlistingIds[candidate.id] ? 0.6 : 1,
+                              cursor: shortlistingIds[candidate.id] ? 'not-allowed' : 'pointer',
+                              background: shortlistingIds[candidate.id] ? 'var(--bg-heavy)' : 'var(--accent)',
+                              borderColor: shortlistingIds[candidate.id] ? 'var(--glass-border)' : 'var(--accent)'
+                            }}
+                          >
+                            {shortlistingIds[candidate.id] ? 'Saving...' : 'Shortlist'}
+                          </button>
                       </div>
                     </motion.div>
                   ))}
