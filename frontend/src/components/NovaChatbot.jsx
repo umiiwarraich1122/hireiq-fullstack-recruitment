@@ -291,7 +291,7 @@ RULES:
             value={input}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder="e.g. Give me the GitHub link of Massna..."
+            placeholder="e.g. Summarize the top candidates, or write a job post..."
             style={{
               width: '100%', minHeight: '60px', padding: '16px',
               background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
