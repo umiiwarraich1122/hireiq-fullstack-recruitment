@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import AuthPage from './pages/AuthPage';
 import EmailPage from './pages/EmailPage';
 import Candidates from './pages/Candidates';
+import OpenRoles from './pages/OpenRoles';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/emails" element={<EmailPage />} />
           <Route path="/candidates" element={<Candidates />} />
+          <Route path="/open-roles" element={<OpenRoles />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

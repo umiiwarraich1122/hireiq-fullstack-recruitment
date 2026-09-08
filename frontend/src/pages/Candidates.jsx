@@ -96,7 +96,7 @@ export default function Candidates() {
           <a href="#" className="dash-link active">
             <span>👥</span> Candidates
           </a>
-          <a href="#" className="dash-link">
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
             <span>💼</span> Open Roles
           </a>
           <a href="#" className="dash-link">
