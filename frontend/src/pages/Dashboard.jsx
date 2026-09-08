@@ -667,7 +667,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
-      <NovaChatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <NovaChatbot isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} emailsCount={emails.length} />
       <JobRoleModal 
         isOpen={isJobModalOpen} 
         onClose={() => setIsJobModalOpen(false)} 
