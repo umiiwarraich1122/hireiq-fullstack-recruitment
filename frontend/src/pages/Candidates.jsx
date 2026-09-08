@@ -10,6 +10,7 @@ export default function Candidates() {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [candidateToDelete, setCandidateToDelete] = useState(null);
 
   const showToast = (text, type = 'success') => {
     setToastMessage({ text, type });
@@ -39,17 +40,19 @@ export default function Candidates() {
     }
   };
 
-  const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to remove ${name}?`)) return;
+  const confirmDelete = async () => {
+    if (!candidateToDelete) return;
     
     try {
-      const { error } = await supabase.from('candidates').delete().eq('id', id);
+      const { error } = await supabase.from('candidates').delete().eq('id', candidateToDelete.id);
       if (error) throw error;
       
-      setCandidates(prev => prev.filter(c => c.id !== id));
-      showToast(`${name} has been removed.`, 'success');
+      setCandidates(prev => prev.filter(c => c.id !== candidateToDelete.id));
+      showToast(`${candidateToDelete.name} has been removed.`, 'success');
     } catch (err) {
       showToast(`Error deleting: ${err.message}`, 'error');
+    } finally {
+      setCandidateToDelete(null);
     }
   };
 
@@ -131,7 +134,7 @@ export default function Candidates() {
                         {c.match_score}% Match
                       </div>
                       <button 
-                        onClick={() => handleDelete(c.id, c.name)}
+                        onClick={() => setCandidateToDelete(c)}
                         style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer', padding: '4px', fontSize: '1.2rem', opacity: 0.7 }}
                         title="Remove candidate"
                         onMouseEnter={(e) => e.target.style.opacity = 1}
@@ -197,6 +200,26 @@ export default function Candidates() {
         >
           {toastMessage.type === 'error' ? '⚠️' : '✅'} {toastMessage.text}
         </motion.div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {candidateToDelete && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000 }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '12px', width: '90%', maxWidth: '400px', border: '1px solid var(--glass-border)', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}
+          >
+            <h3 style={{ margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Remove Candidate</h3>
+            <p style={{ margin: '0 0 24px 0', color: 'var(--text-secondary)' }}>
+              Are you sure you want to remove <strong>{candidateToDelete.name}</strong> from your shortlisted candidates? This action cannot be undone.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button onClick={() => setCandidateToDelete(null)} className="btn-outline" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>Cancel</button>
+              <button onClick={confirmDelete} className="btn-glow" style={{ padding: '8px 16px', fontSize: '0.9rem', background: 'var(--red)', borderColor: 'var(--red)' }}>Yes, Remove</button>
+            </div>
+          </motion.div>
+        </div>
       )}
     </div>
   );
