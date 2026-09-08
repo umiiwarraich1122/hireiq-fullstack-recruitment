@@ -166,10 +166,35 @@ export default function Dashboard() {
       setScanMessage({ type: 'info', text: `Starting scan... Found ${emails.length} emails to process.` });
       setIsScanning(true);
       const results = [];
+      const processedEmails = new Set();
       
       for (const email of emails) {
         if (!email.attachments || email.attachments.length === 0) {
           continue; // Skip emails without PDFs
+        }
+
+        // Extract plain email from sender string "Name <email@domain.com>"
+        const rawEmail = email.sender.includes('<') 
+          ? email.sender.split('<')[1].replace('>', '').trim() 
+          : email.sender.trim();
+
+        if (processedEmails.has(rawEmail.toLowerCase())) {
+          setScanMessage({ type: 'info', text: `Skipped duplicate in batch: ${rawEmail}.` });
+          continue;
+        }
+        processedEmails.add(rawEmail.toLowerCase());
+
+        // Check if candidate already exists in Supabase
+        const { data: existingCandidate } = await supabase
+          .from('candidates')
+          .select('id')
+          .ilike('email', `%${rawEmail}%`)
+          .limit(1);
+
+        if (existingCandidate && existingCandidate.length > 0) {
+          setScanMessage({ type: 'info', text: `Skipped duplicate: ${rawEmail} is already in candidates list.` });
+          addActivity('Duplicate Filter', `Skipped duplicate CV from ${rawEmail}`, 'orange');
+          continue; // Skip processing this email
         }
         
         const attachment = email.attachments[0]; // Process the first PDF attachment

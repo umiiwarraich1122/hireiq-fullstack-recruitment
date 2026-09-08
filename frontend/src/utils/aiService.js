@@ -1,8 +1,15 @@
 export const analyzeResumeText = async (resumeText, targetRole = "Software Developer") => {
   const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-  const prompt = `You are an HR AI assistant. Evaluate this resume for the role: "${targetRole}".
-Return ONLY a valid JSON object.
+  const prompt = `You are an expert technical recruiter and HR AI assistant. 
+Your task is to strictly evaluate this resume against the requirements for the specific role: "${targetRole}".
+
+CRITICAL SCORING INSTRUCTIONS:
+- Calculate "match_score" (0 to 100) based ONLY on how well the candidate's skills and experience align with the "${targetRole}" role.
+- Heavily penalize (lower score) if the candidate's core skills are irrelevant to "${targetRole}".
+- If the resume is for a completely different profession, the match_score MUST be below 30.
+
+Return ONLY a valid JSON object matching exactly this structure:
 {
   "name": "Candidate's full name",
   "email": "Email address",
@@ -13,7 +20,7 @@ Return ONLY a valid JSON object.
   "skills": ["Skill1", "Skill2", "Skill3"],
   "experience_years": 5,
   "match_score": 85,
-  "summary": "1-sentence summary of relevance."
+  "summary": "1-sentence summary of relevance to the ${targetRole} role."
 }
 
 Resume Text:
