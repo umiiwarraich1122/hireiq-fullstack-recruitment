@@ -25,6 +25,14 @@ export default function Dashboard() {
   const [selectedJobRole, setSelectedJobRole] = useState('');
   const [scannedCandidates, setScannedCandidates] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [systemActivity, setSystemActivity] = useState([]);
+
+  const addActivity = (agentName, action, color) => {
+    setSystemActivity(prev => [
+      { id: Date.now() + Math.random(), agentName, action, color, time: new Date().toLocaleTimeString() },
+      ...prev
+    ].slice(0, 6));
+  };
 
   const getAttachments = (payload) => {
     let attachments = [];
@@ -169,14 +177,17 @@ export default function Dashboard() {
         }
 
         setScanMessage({ type: 'info', text: `Extracting text from PDF for ${email.sender}...` });
+        addActivity('Resume Parser Agent', `Extracted PDF text for ${email.sender.split('<')[0].trim()}`, 'green');
         const pdfText = await extractTextFromPDFBase64(attData.data);
         
         setScanMessage({ type: 'info', text: `Analyzing CV with Groq AI for ${email.sender}...` });
+        addActivity('Matching Agent', `Evaluating skills against '${selectedJobRole || "Target Role"}'`, 'blue');
         const aiResult = await analyzeResumeText(pdfText, selectedJobRole || "Software Developer");
         
         let githubStats = null;
         if (aiResult.github_username) {
           setScanMessage({ type: 'info', text: `Verifying GitHub profile: ${aiResult.github_username}...` });
+          addActivity('Coding Profile Agent', `Verifying GitHub stats for @${aiResult.github_username}`, 'yellow');
           const ghRes = await verifyGithubStats(aiResult.github_username);
           if (ghRes && ghRes.success) {
             githubStats = ghRes.data;
@@ -414,27 +425,23 @@ export default function Dashboard() {
             <div className="dash-card">
               <h3>System Activity (AI Agents)</h3>
               <ul className="activity-list">
-                <li>
-                  <span className="dot dot-green"></span>
-                  <div>
-                    <strong>Resume Parser Agent</strong> processed 45 resumes for Frontend Dev.
-                    <span className="time">10 mins ago</span>
-                  </div>
-                </li>
-                <li>
-                  <span className="dot dot-blue"></span>
-                  <div>
-                    <strong>Coding Profile Analyzer</strong> verified 12 GitHub profiles.
-                    <span className="time">25 mins ago</span>
-                  </div>
-                </li>
-                <li>
-                  <span className="dot dot-yellow"></span>
-                  <div>
-                    <strong>Red Flag Detector</strong> flagged 3 resumes for timeline gaps.
-                    <span className="time">1 hour ago</span>
-                  </div>
-                </li>
+                {systemActivity.length === 0 ? (
+                  <li style={{ color: 'var(--text-muted)' }}>Waiting for AI agents to start working...</li>
+                ) : (
+                  systemActivity.map(activity => (
+                    <motion.li 
+                      key={activity.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      <span className={`dot dot-${activity.color}`}></span>
+                      <div>
+                        <strong>{activity.agentName}</strong> {activity.action}
+                        <span className="time">{activity.time}</span>
+                      </div>
+                    </motion.li>
+                  ))
+                )}
               </ul>
             </div>
             
