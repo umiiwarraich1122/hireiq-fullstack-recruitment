@@ -152,6 +152,7 @@ export default function Dashboard() {
 
   const [scanMessage, setScanMessage] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [shortlistingIds, setShortlistingIds] = useState({});
 
   const showToast = (text, type = 'success') => {
     setToastMessage({ text, type });
