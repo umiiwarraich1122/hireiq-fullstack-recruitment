@@ -4,15 +4,21 @@ import { supabase } from '../config/supabaseClient';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
-export default function NovaChatbot({ isOpen, onClose, emailsCount = 0 }) {
-  const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
+export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, user }) {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   
   // Resizable Sidebar State
   const [sidebarWidth, setSidebarWidth] = useState(450);
   const [isDragging, setIsDragging] = useState(false);
   const textareaRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  // Auto-scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -41,7 +47,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0 }) {
   }, [isDragging]);
 
   const handleInput = (e) => {
-    setPrompt(e.target.value);
+    setInput(e.target.value);
     if (textareaRef.current) {
       textareaRef.current.style.height = '50px'; 
       const scrollHeight = textareaRef.current.scrollHeight;
@@ -49,11 +55,37 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0 }) {
     }
   };
 
-  const generatePost = async () => {
-    if (!prompt.trim()) return;
-    setLoading(true);
-    setResponse('');
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const saveMessageToDB = async (role, content) => {
+    if (!user) return;
+    try {
+      await supabase.from('nova_chats').insert([{
+        user_id: user.id,
+        role: role,
+        content: content
+      }]);
+    } catch (e) {
+      // Silently fail if table doesn't exist yet
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || loading) return;
     
+    const userMsg = { role: 'user', content: input.trim() };
+    setMessages(prev => [...prev, userMsg]);
+    setInput('');
+    if (textareaRef.current) textareaRef.current.style.height = '50px';
+    
+    setLoading(true);
+    await saveMessageToDB('user', userMsg.content);
+
     // Fetch live dashboard context
     let candidatesContext = "No candidates shortlisted yet.";
     try {
@@ -63,11 +95,11 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0 }) {
           `- Name: ${c.name}, Role: ${c.job_role}, Match: ${c.match_score}%, Skills: ${c.skills?.join(', ')}, GitHub/Contact Info: ${c.github_stats?.profileUrl || 'None'}`
         ).join('\n');
       }
-    } catch (e) {
-      console.warn("Could not fetch candidates for context");
-    }
+    } catch (e) { }
 
-    const systemPrompt = `You are Nova, an intelligent AI HR assistant for HireIQ. 
+    const systemPrompt = {
+      role: "system", 
+      content: `You are Nova, an intelligent AI HR assistant for HireIQ. 
 Your purpose is to answer the user's questions about their recruitment pipeline, OR generate professional LinkedIn job posts if requested.
 
 CURRENT DASHBOARD CONTEXT:
@@ -79,9 +111,14 @@ RULES:
 1. Answer questions about the candidates based ONLY on the context provided above.
 2. If asked about contact info or GitHub, provide the URL from the context.
 3. If the user asks you to write a job post, create a short, professional LinkedIn post with emojis.
-4. Be conversational, helpful, and concise.`;
-    
-    const userMessage = prompt;
+4. Be conversational, helpful, and concise. Remember previous messages in this conversation.`
+    };
+
+    // Prepare message history for LLM (only sending last 10 to save tokens)
+    const historyForLLM = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
+    const llmMessages = [systemPrompt, ...historyForLLM, userMsg];
+
+    let aiResponseContent = "";
 
     try {
       // Trying Local Ollama first
@@ -90,63 +127,56 @@ RULES:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "llama3.2:3b",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage }
-          ],
+          messages: llmMessages,
           temperature: 0.7
         })
       });
 
       if (ollamaRes.ok) {
         const data = await ollamaRes.json();
-        setResponse(data.choices[0].message.content);
-        setLoading(false);
-        return;
+        aiResponseContent = data.choices[0].message.content;
       }
     } catch (e) {
       console.log("Local Ollama failed, falling back to Groq");
     }
 
-    try {
-      // Fallback to Groq
-      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "llama3-8b-8192", 
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage }
-          ],
-          temperature: 0.7
-        })
-      });
-      
-      const groqData = await groqRes.json();
-      
-      if (groqRes.ok && groqData.choices) {
-        setResponse(groqData.choices[0].message.content);
-      } else {
-        setResponse(`Error: ${groqData.error?.message || "Both Ollama and Groq failed."}`);
+    if (!aiResponseContent) {
+      try {
+        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: "llama3-8b-8192", 
+            messages: llmMessages,
+            temperature: 0.7
+          })
+        });
+        const groqData = await groqRes.json();
+        if (groqRes.ok && groqData.choices) {
+          aiResponseContent = groqData.choices[0].message.content;
+        } else {
+          aiResponseContent = `Error: ${groqData.error?.message || "Both Ollama and Groq failed."}`;
+        }
+      } catch (err) {
+        aiResponseContent = `Network Error: Both AI services failed.`;
       }
-
-    } catch (err) {
-      console.error(err);
-      setResponse(`Network Error: Both AI services failed.`);
-    } finally {
-      setLoading(false);
     }
+
+    const aiMsg = { role: 'assistant', content: aiResponseContent };
+    setMessages(prev => [...prev, aiMsg]);
+    setLoading(false);
+    
+    await saveMessageToDB('assistant', aiMsg.content);
   };
 
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      {/* Optional: Subtle backdrop that can be clicked to close */}
+      {/* Subtle backdrop */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -193,57 +223,74 @@ RULES:
           background: 'var(--bg-heavy)'
         }}>
           <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
-            <span style={{ fontSize: '1.5rem' }}>✨</span> Nova: Post Generator
+            <span style={{ fontSize: '1.5rem' }}>🤖</span> Nova HR Assistant
           </h2>
-          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='var(--text-primary)'} onMouseOut={e => e.target.style.color='var(--text-secondary)'}>✕</button>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', fontSize: '1.4rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='var(--text-primary)'} onMouseOut={e => e.target.style.color='var(--text-secondary)'}>✖</button>
         </div>
 
-        {/* Scrollable Output Area */}
-        <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          {!response && !loading && (
+        {/* Chat History Area */}
+        <div style={{ padding: '24px', flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {messages.length === 0 ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
               <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6' }}>
                 👋 Hi! I'm Nova.<br/>
-                Type the details of the job role below, and I'll generate a professional LinkedIn post for you.
+                Ask me about your inbox, shortlisted candidates, or tell me to write a job post!
               </p>
             </div>
+          ) : (
+            messages.map((msg, idx) => (
+              <motion.div 
+                key={idx}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{ 
+                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                  maxWidth: '85%',
+                  background: msg.role === 'user' ? 'var(--accent)' : 'var(--bg-card)',
+                  color: msg.role === 'user' ? '#fff' : 'var(--text-primary)',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
+                  fontSize: '0.95rem',
+                  lineHeight: '1.5',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {msg.content}
+              </motion.div>
+            ))
           )}
 
-          {response && (
+          {/* Typing Indicator */}
+          {loading && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              style={{ display: 'flex', flexDirection: 'column', flex: 1 }}
+              style={{ alignSelf: 'flex-start', background: 'var(--bg-card)', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', gap: '6px', alignItems: 'center' }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ margin: 0, color: 'var(--accent)', fontSize: '1rem' }}>Generated Post:</h3>
-                <button 
-                  onClick={() => navigator.clipboard.writeText(response)}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  onMouseOver={e => e.target.style.color='var(--text-primary)'} onMouseOut={e => e.target.style.color='var(--text-secondary)'}
-                >
-                  📋 Copy
-                </button>
-              </div>
-              <div style={{ 
-                background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', 
-                border: '1px solid var(--glass-border)', color: 'var(--text-primary)',
-                fontSize: '0.95rem', lineHeight: '1.6',
-                whiteSpace: 'pre-wrap'
-              }}>
-                {response}
-              </div>
+              <style>{`
+                @keyframes blink {
+                  0% { opacity: 0.2; }
+                  20% { opacity: 1; }
+                  100% { opacity: 0.2; }
+                }
+              `}</style>
+              <span style={{ width: '6px', height: '6px', background: 'var(--text-secondary)', borderRadius: '50%', display: 'inline-block', animation: 'blink 1.4s infinite both' }}></span>
+              <span style={{ width: '6px', height: '6px', background: 'var(--text-secondary)', borderRadius: '50%', display: 'inline-block', animation: 'blink 1.4s infinite both', animationDelay: '0.2s' }}></span>
+              <span style={{ width: '6px', height: '6px', background: 'var(--text-secondary)', borderRadius: '50%', display: 'inline-block', animation: 'blink 1.4s infinite both', animationDelay: '0.4s' }}></span>
             </motion.div>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Bottom Input Area */}
         <div style={{ padding: '20px 24px', borderTop: '1px solid var(--glass-border)', background: 'var(--bg-deep)' }}>
           <textarea 
             ref={textareaRef}
-            value={prompt}
+            value={input}
             onChange={handleInput}
-            placeholder="e.g. How many CVs in my inbox? or Write a LinkedIn post..."
+            onKeyDown={handleKeyDown}
+            placeholder="e.g. Give me the GitHub link of Massna..."
             style={{
               width: '100%', minHeight: '60px', padding: '16px',
               background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
@@ -257,11 +304,11 @@ RULES:
           />
           <button 
             className="btn-glow" 
-            onClick={generatePost} 
-            disabled={loading || !prompt.trim()}
-            style={{ width: '100%', padding: '14px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            onClick={handleSendMessage} 
+            disabled={loading || !input.trim()}
+            style={{ width: '100%', padding: '14px', fontSize: '1rem', fontWeight: '600', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
           >
-            {loading ? 'Nova is thinking...' : 'Ask Nova / Generate Post'}
+            {loading ? 'Thinking...' : 'Send Message'}
           </button>
         </div>
       </motion.div>
