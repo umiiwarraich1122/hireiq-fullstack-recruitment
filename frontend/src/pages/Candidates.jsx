@@ -9,6 +9,14 @@ export default function Candidates() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (text, type = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  };
 
   useEffect(() => {
     fetchCandidates();
@@ -21,16 +29,27 @@ export default function Candidates() {
         .select('*')
         .order('match_score', { ascending: false });
       
-      if (error) {
-        throw error;
-      }
-      
+      if (error) throw error;
       setCandidates(data || []);
     } catch (err) {
       console.error(err);
       setErrorMsg(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to remove ${name}?`)) return;
+    
+    try {
+      const { error } = await supabase.from('candidates').delete().eq('id', id);
+      if (error) throw error;
+      
+      setCandidates(prev => prev.filter(c => c.id !== id));
+      showToast(`${name} has been removed.`, 'success');
+    } catch (err) {
+      showToast(`Error deleting: ${err.message}`, 'error');
     }
   };
 
@@ -107,8 +126,19 @@ export default function Candidates() {
                       <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{c.name}</h3>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c.job_role}</div>
                     </div>
-                    <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                      {c.match_score}% Match
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                        {c.match_score}% Match
+                      </div>
+                      <button 
+                        onClick={() => handleDelete(c.id, c.name)}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer', padding: '4px', fontSize: '1.2rem', opacity: 0.7 }}
+                        title="Remove candidate"
+                        onMouseEnter={(e) => e.target.style.opacity = 1}
+                        onMouseLeave={(e) => e.target.style.opacity = 0.7}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
 
@@ -142,6 +172,32 @@ export default function Candidates() {
           )}
         </div>
       </main>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, x: '-50%' }}
+          animate={{ opacity: 1, y: 0, x: '-50%' }}
+          style={{
+            position: 'fixed',
+            bottom: '40px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: toastMessage.type === 'error' ? 'var(--red)' : 'var(--green)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: '30px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            zIndex: 9999,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {toastMessage.type === 'error' ? '⚠️' : '✅'} {toastMessage.text}
+        </motion.div>
+      )}
     </div>
   );
 }
