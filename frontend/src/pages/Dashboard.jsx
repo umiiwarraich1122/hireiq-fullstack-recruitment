@@ -115,41 +115,46 @@ export default function Dashboard() {
   };
 
   const runAIScreening = async () => {
-    setIsScanning(true);
-    const results = [];
-    
-    // Simulate processing time
-    await new Promise(r => setTimeout(r, 1500));
+    try {
+      alert(`Starting scan... Found ${emails.length} emails to process.`);
+      setIsScanning(true);
+      const results = [];
+      
+      // Simulate processing time
+      await new Promise(r => setTimeout(r, 1000));
 
-    // Loop through emails fetched from Gmail
-    for (const email of emails) {
-      // 1. First attempt: Extract from actual email snippet
-      let username = extractGithubUsername(email.snippet || '');
-      
-      // 2. Fallback for Demonstration: If no GitHub link exists in real emails, 
-      // we inject a mock one so the user can see the GitHub API working
-      if (!username && results.length === 0) {
-        username = "torvalds"; // Linus Torvalds profile as a fallback demonstration
-      }
-      
-      if (username) {
-        const result = await verifyGithubStats(username);
-        if (result.success) {
-          const stats = result.data;
-          results.push({
-            id: email.id || Math.random().toString(),
-            name: email.sender ? email.sender.split('<')[0].trim() : "Linus T. (Mocked Email)",
-            github: stats,
-            matchScore: Math.floor(Math.random() * 15) + 85
-          });
-        } else {
-          alert(`Automated Scan Error for '${username}': ${result.error}`);
+      // Loop through emails fetched from Gmail
+      for (const email of emails) {
+        let username = extractGithubUsername(email.snippet || '');
+        
+        if (!username && results.length === 0) {
+          username = "torvalds"; // Linus Torvalds profile as a fallback demonstration
+        }
+        
+        if (username) {
+          const result = await verifyGithubStats(username);
+          if (result && result.success) {
+            const stats = result.data;
+            results.push({
+              id: email.id || Math.random().toString(),
+              name: email.sender ? email.sender.split('<')[0].trim() : "Linus T. (Mocked Email)",
+              github: stats,
+              matchScore: Math.floor(Math.random() * 15) + 85
+            });
+          } else {
+            alert(`API Error for '${username}': ${result ? result.error : 'Unknown API Failure'}`);
+          }
         }
       }
+      
+      setScannedCandidates(results);
+      alert(`Scan complete! Added ${results.length} candidates to the UI.`);
+    } catch (err) {
+      alert(`CRITICAL ERROR during scan: ${err.message}`);
+      console.error(err);
+    } finally {
+      setIsScanning(false);
     }
-    
-    setScannedCandidates(results);
-    setIsScanning(false);
   };
 
   const [manualGitLink, setManualGitLink] = useState('');
