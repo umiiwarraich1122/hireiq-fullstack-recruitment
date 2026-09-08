@@ -382,12 +382,15 @@ export default function Dashboard() {
           </div>
 
           <div className="candidate-list">
-            {candidates.length === 0 ? (
+            {scannedCandidates.filter(c => c.matchScore >= 75).length === 0 ? (
               <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-heavy)', borderRadius: '12px', border: '1px dashed var(--glass-border)' }}>
-                No candidates verified yet. Sync emails to start parsing resumes.
+                No high-match candidates verified yet. Run AI scan to find top matches!
               </div>
             ) : (
-              candidates.map((c, i) => (
+              scannedCandidates
+                .filter(c => c.matchScore >= 75)
+                .sort((a, b) => b.matchScore - a.matchScore)
+                .map((c, i) => (
                 <motion.div 
                   key={c.id} 
                   className="candidate-row"
@@ -399,18 +402,18 @@ export default function Dashboard() {
                     <div className="c-avatar">{c.name.charAt(0)}</div>
                     <div>
                       <div className="c-name">{c.name}</div>
-                      <div className="c-role">{c.role}</div>
+                      <div className="c-role">{c.targetRole || "Candidate"}</div>
                     </div>
                   </div>
                   <div className="c-score">
-                    <div className="score-val">{c.score}% Match</div>
+                    <div className="score-val">{c.matchScore}% Match</div>
                     <div className="score-bar">
-                      <div className="score-fill" style={{ width: `${c.score}%`, background: 'var(--green)' }}></div>
+                      <div className="score-fill" style={{ width: `${c.matchScore}%`, background: 'var(--green)' }}></div>
                     </div>
                   </div>
                   <div className="c-tags">
-                    <span className="tag tag-green">{c.match}</span>
-                    {c.flag && <span className="tag tag-yellow">{c.flag}</span>}
+                    {c.github && <span className="tag tag-green">GitHub Verified</span>}
+                    {c.experience && <span className="tag tag-blue">{c.experience} Yrs Exp</span>}
                   </div>
                   <div className="c-actions">
                     <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>View</button>
