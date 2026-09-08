@@ -9,7 +9,7 @@ CRITICAL SCORING INSTRUCTIONS:
 - Heavily penalize (lower score) if the candidate's core skills are irrelevant to "${targetRole}".
 - If the resume is for a completely different profession, the match_score MUST be below 30.
 
-Return ONLY a valid JSON object matching exactly this structure:
+Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like \`\`\`json. DO NOT add conversational text:
 {
   "name": "Candidate's full name",
   "email": "Email address",
@@ -37,9 +37,8 @@ ${resumeText}`;
         model: model,
         temperature: 0.0,
         seed: 42,
-        response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: "You extract structured data from resumes and output strictly valid JSON." },
+          { role: "system", content: "You extract structured data from resumes. You output raw valid JSON only. No markdown, no prefixes." },
           { role: "user", content: prompt }
         ]
       }),
