@@ -202,13 +202,19 @@ export default function Dashboard() {
           }
         }
         
+        const ensureArray = (val) => Array.isArray(val) ? val : (typeof val === 'string' ? val.split(',').map(s=>s.trim()) : []);
+
         results.push({
           id: email.id || Math.random().toString(),
           name: aiResult.name || email.sender.split('<')[0].trim(),
+          email: aiResult.email || null,
+          phone: aiResult.phone || null,
+          education: ensureArray(aiResult.education),
+          projects: ensureArray(aiResult.projects),
           github: githubStats,
           matchScore: aiResult.match_score || 0,
           targetRole: selectedJobRole || "Software Developer",
-          skills: aiResult.skills || [],
+          skills: ensureArray(aiResult.skills),
           summary: aiResult.summary || "No summary available.",
           experience: aiResult.experience_years
         });
