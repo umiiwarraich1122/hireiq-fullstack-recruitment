@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../config/supabaseClient';
 
-const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const CEREBRAS_API_KEY = import.meta.env.VITE_CEREBRAS_API_KEY;
 
 export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSenders = "", user }) {
@@ -124,7 +123,6 @@ RULES:
     let aiResponseContent = "";
 
     try {
-      // Primary: Cerebras
       const cerebrasRes = await fetch("https://api.cerebras.ai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -132,7 +130,7 @@ RULES:
           "Authorization": `Bearer ${CEREBRAS_API_KEY}`
         },
         body: JSON.stringify({
-          model: "gpt-oss-120b", 
+          model: "llama3.1-8b", 
           messages: llmMessages,
           temperature: 0.7
         })
@@ -143,31 +141,8 @@ RULES:
       } else {
         throw new Error(cerebrasData.error?.message || "Cerebras API failed.");
       }
-    } catch (err1) {
-      console.warn("Cerebras API failed, falling back to Groq:", err1);
-      try {
-        // Fallback: Groq
-        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${GROQ_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: "openai/gpt-oss-20b", 
-            messages: llmMessages,
-            temperature: 0.7
-          })
-        });
-        const groqData = await groqRes.json();
-        if (groqRes.ok && groqData.choices) {
-          aiResponseContent = groqData.choices[0].message.content;
-        } else {
-          aiResponseContent = `Error: Both Cerebras and Groq failed. ${groqData.error?.message || ""}`;
-        }
-      } catch (err2) {
-        aiResponseContent = `Network Error: Both AI services failed.`;
-      }
+    } catch (err) {
+      aiResponseContent = `Network Error: Cerebras AI service failed.`;
     }
 
     const aiMsg = { role: 'assistant', content: aiResponseContent };

@@ -1,6 +1,5 @@
 export const analyzeResumeText = async (resumeText, targetRole = "Software Developer") => {
   const CEREBRAS_API_KEY = import.meta.env.VITE_CEREBRAS_API_KEY;
-  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 
   const prompt = `You are an HR AI assistant. Evaluate this resume for the role: "${targetRole}".
 Return ONLY a valid JSON object.
@@ -46,19 +45,7 @@ ${resumeText}`;
   };
 
   try {
-    let data;
-    try {
-      // Primary: Cerebras (Extremely Fast)
-      data = await callAI("https://api.cerebras.ai/v1/chat/completions", CEREBRAS_API_KEY, "gpt-oss-120b");
-    } catch (err1) {
-      console.warn("Cerebras API failed, falling back to Groq:", err1);
-      try {
-        // Fallback: Groq
-        data = await callAI("https://api.groq.com/openai/v1/chat/completions", GROQ_API_KEY, "openai/gpt-oss-20b");
-      } catch (err2) {
-        throw new Error("Both Cerebras and Groq APIs failed. " + err2.message);
-      }
-    }
+    const data = await callAI("https://api.cerebras.ai/v1/chat/completions", CEREBRAS_API_KEY, "llama3.1-8b");
     
     let jsonString = data.choices[0].message.content;
     
