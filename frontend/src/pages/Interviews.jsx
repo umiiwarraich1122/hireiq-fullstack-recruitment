@@ -37,7 +37,7 @@ export default function Interviews() {
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}><span>📊</span> Overview</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}><span>📥</span> Inbox</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}><span>👥</span> Candidates</a>
-          <a href="#" className="dash-link active"><span>📅</span> Interviews</a>
+          <a href="#" className="dash-link active"><span>📅</span> Interview Schedule</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}><span>💼</span> Open Roles</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}><span>📈</span> Analytics</a>
         </nav>
@@ -45,7 +45,7 @@ export default function Interviews() {
 
       <main className="dash-main">
         <header className="dash-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h2>Scheduled Interviews</h2>
+          <h2>Interview Schedule</h2>
           <button className="btn-outline" onClick={handleLogout} style={{ padding: '8px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>Sign Out</button>
         </header>
 
@@ -66,7 +66,7 @@ export default function Interviews() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}><span style={{ fontSize: '1.2rem' }}>📅</span><span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{intv.date}</span></div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ fontSize: '1.2rem' }}>⏰</span><span style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{intv.time}</span></div>
                   </div>
-                  <div style={{ marginTop: 'auto', paddingTop: '12px' }}><button className="btn-primary" style={{ width: '100%', padding: '8px' }} onClick={() => alert('Video Call feature coming soon!')}>🎥 Join Meeting</button></div>
+                  <div style={{ marginTop: 'auto', paddingTop: '12px' }}><button className="btn-primary" style={{ width: '100%', padding: '8px' }} onClick={() => navigate(`/interview-room/${intv.id}`)}>🎥 Open Interview Room</button></div>
                 </motion.div>
               ))}
             </div>

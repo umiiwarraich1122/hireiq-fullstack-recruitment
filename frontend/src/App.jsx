@@ -10,6 +10,7 @@ import Candidates from './pages/Candidates';
 import OpenRoles from './pages/OpenRoles';
 import Analytics from './pages/Analytics';
 import Interviews from './pages/Interviews';
+import InterviewRoom from './pages/InterviewRoom';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/open-roles" element={<OpenRoles />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/interviews" element={<Interviews />} />
+          <Route path="/interview-room/:id" element={<InterviewRoom />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
