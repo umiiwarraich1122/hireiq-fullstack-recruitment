@@ -91,3 +91,51 @@ ${resumeText}`;
     throw new Error(error.message);
   }
 };
+
+export const generateInterviewQuestions = async (jobRole) => {
+  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+
+  const prompt = `You are an expert technical interviewer. I am an HR recruiter who doesn't know much about technical fields.
+Generate 5 technical interview questions and their easy-to-understand answers for a "${jobRole}" role. 
+The questions should evaluate their core knowledge. Keep the answers concise so I can quickly read them before the interview.
+
+Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like \`\`\`json:
+[
+  {
+    "question": "The interview question",
+    "answer": "The concise, correct technical answer"
+  }
+]`;
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${GROQ_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "llama3-8b-8192",
+      temperature: 0.7,
+      messages: [
+        { role: "system", content: "You generate technical interview questions. You output raw valid JSON array only. No markdown, no prefixes." },
+        { role: "user", content: prompt }
+      ]
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(await res.text());
+  }
+  const data = await res.json();
+  let jsonString = data.choices[0].message.content;
+  if (jsonString.includes('```')) {
+    jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+  }
+  const firstBracket = jsonString.indexOf('[');
+  const lastBracket = jsonString.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket !== -1) {
+    jsonString = jsonString.substring(firstBracket, lastBracket + 1);
+  }
+  
+  return JSON.parse(jsonString);
+};
