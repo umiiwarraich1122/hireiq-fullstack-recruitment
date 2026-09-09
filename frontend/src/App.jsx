@@ -9,6 +9,7 @@ import EmailPage from './pages/EmailPage';
 import Candidates from './pages/Candidates';
 import OpenRoles from './pages/OpenRoles';
 import Analytics from './pages/Analytics';
+import Interviews from './pages/Interviews';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route path="/candidates" element={<Candidates />} />
           <Route path="/open-roles" element={<OpenRoles />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/interviews" element={<Interviews />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

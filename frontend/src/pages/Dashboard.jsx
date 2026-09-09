@@ -56,8 +56,8 @@ export default function Dashboard() {
     if (!token) return;
     setIsSyncing(true);
     try {
-      // 1. Search for emails with actual PDF/DOC attachments AND the word resume/cv
-      const query = encodeURIComponent("has:attachment (filename:pdf OR filename:doc OR filename:docx) (resume OR cv)");
+      // 1. Search for emails in inbox with actual PDF/DOC attachments AND the word resume/cv
+      const query = encodeURIComponent("in:inbox has:attachment (filename:pdf OR filename:doc OR filename:docx) (resume OR cv)");
       const searchRes = await fetch(
         `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${query}`, 
         { headers: { Authorization: `Bearer ${token}` } }
@@ -319,7 +319,7 @@ export default function Dashboard() {
         education: candidate.education || [],
         projects: candidate.projects || [],
         summary: candidate.summary,
-        github_stats: candidate.github
+        github_stats: candidate.github ? { ...candidate.github, experience: candidate.experience } : { experience: candidate.experience }
       }]);
       if (error) throw error;
       
@@ -358,6 +358,9 @@ export default function Dashboard() {
           </a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
             <span>👥</span> Candidates
+          </a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/interviews'); }}>
+            <span>📅</span> Interviews
           </a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
             <span>💼</span> Open Roles

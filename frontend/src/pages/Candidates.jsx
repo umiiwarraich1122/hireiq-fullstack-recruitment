@@ -11,7 +11,9 @@ export default function Candidates() {
   const [errorMsg, setErrorMsg] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [candidateToDelete, setCandidateToDelete] = useState(null);
-
+  const [scheduleCandidate, setScheduleCandidate] = useState(null);
+  const [interviewDate, setInterviewDate] = useState('');
+  const [interviewTime, setInterviewTime] = useState('');
   const showToast = (text, type = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => {
@@ -56,6 +58,30 @@ export default function Candidates() {
     }
   };
 
+  const handleScheduleInterview = () => {
+    if (!scheduleCandidate || !interviewDate || !interviewTime) {
+      showToast('Please select date and time', 'error');
+      return;
+    }
+    const newInterview = {
+      id: Math.random().toString(36).substr(2, 9),
+      candidateId: scheduleCandidate.id,
+      candidateName: scheduleCandidate.name,
+      jobRole: scheduleCandidate.job_role,
+      date: interviewDate,
+      time: interviewTime,
+      createdAt: new Date().toISOString()
+    };
+    const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
+    stored.push(newInterview);
+    localStorage.setItem('hireiq_interviews', JSON.stringify(stored));
+    
+    showToast(`Interview scheduled for ${scheduleCandidate.name}`, 'success');
+    setScheduleCandidate(null);
+    setInterviewDate('');
+    setInterviewTime('');
+  };
+
   const confirmDelete = async () => {
     if (!candidateToDelete) return;
     
@@ -93,8 +119,11 @@ export default function Candidates() {
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
             <span>📥</span> Inbox
           </a>
-          <a href="#" className="dash-link active">
+          <a href="#" className="dash-link active" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
             <span>👥</span> Candidates
+          </a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/interviews'); }}>
+            <span>📅</span> Interviews
           </a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
             <span>💼</span> Open Roles
@@ -145,10 +174,15 @@ export default function Candidates() {
                       <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-primary)' }}>{c.name}</h3>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c.job_role}</div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                        {c.match_score}% Match
+                        ⭐ {c.match_score}% Match
                       </div>
+                      {(c.experience_years !== undefined ? c.experience_years : c.github_stats?.experience) !== undefined && (c.experience_years !== undefined ? c.experience_years : c.github_stats?.experience) !== null && (
+                        <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', color: 'var(--purple-light)' }}>
+                          💼 {c.experience_years !== undefined ? c.experience_years : c.github_stats?.experience} Yrs Exp
+                        </div>
+                      )}
                       <button 
                         onClick={() => setCandidateToDelete(c)}
                         style={{ background: 'transparent', border: 'none', color: 'var(--red)', cursor: 'pointer', padding: '4px', fontSize: '1.2rem', opacity: 0.7 }}
@@ -176,7 +210,7 @@ export default function Candidates() {
                     </div>
                   )}
 
-                  {c.github_stats && (
+                  {c.github_stats && c.github_stats.totalStars !== undefined && (
                     <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '12px' }}>
                       <span className="tag tag-yellow">⭐ {c.github_stats.totalStars}</span>
                       <span className="tag tag-blue">📚 {c.github_stats.publicRepos}</span>
@@ -185,6 +219,12 @@ export default function Candidates() {
                       </a>
                     </div>
                   )}
+
+                  <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
+                    <button className="btn-outline" style={{ width: '100%', padding: '8px' }} onClick={() => setScheduleCandidate(c)}>
+                      📅 Schedule Interview
+                    </button>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -235,6 +275,29 @@ export default function Candidates() {
               <button onClick={confirmDelete} className="btn-glow" style={{ padding: '8px 16px', fontSize: '0.9rem', background: 'var(--red)', borderColor: 'var(--red)' }}>Yes, Remove</button>
             </div>
           </motion.div>
+        </div>
+      )}
+      {scheduleCandidate && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal-content" style={{ background: 'var(--bg-card)', padding: '30px', borderRadius: '16px', width: '90%', maxWidth: '400px', border: '1px solid var(--glass-border)' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Schedule Interview</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>For <strong>{scheduleCandidate.name}</strong> ({scheduleCandidate.job_role})</p>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-primary)' }}>Select Date</label>
+              <input type="date" value={interviewDate} onClick={(e) => { try { e.target.showPicker() } catch(err){} }} onChange={e => setInterviewDate(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'var(--text-primary)', cursor: 'pointer' }} />
+            </div>
+            
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-primary)' }}>Select Time</label>
+              <input type="time" value={interviewTime} onClick={(e) => { try { e.target.showPicker() } catch(err){} }} onChange={e => setInterviewTime(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'var(--text-primary)', cursor: 'pointer' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="btn-outline" onClick={() => setScheduleCandidate(null)} style={{ padding: '8px 16px' }}>Cancel</button>
+              <button className="btn-primary" onClick={handleScheduleInterview} style={{ padding: '8px 16px' }}>Confirm Schedule</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -5,9 +5,10 @@ export const analyzeResumeText = async (resumeText, targetRole = "Software Devel
 Your task is to strictly evaluate this resume against the requirements for the specific role: "${targetRole}".
 
 CRITICAL SCORING INSTRUCTIONS:
-- Calculate "match_score" (0 to 100) based ONLY on how well the candidate's skills and experience align with the "${targetRole}" role.
+- Calculate "match_score" (0 to 100) based ONLY on how well the candidate's skills, career interest, and experience align with the "${targetRole}" role.
+- STRICT PENALTY FOR CAREER MISALIGNMENT: If the candidate's primary interest, objective, or dominant experience points toward a different field (e.g. AI/Machine Learning when the role is Full Stack, or vice versa), the match_score MUST be below 40, even if they have some overlapping basic skills (like Python or JS).
 - Heavily penalize (lower score) if the candidate's core skills are irrelevant to "${targetRole}".
-- If the resume is for a completely different profession, the match_score MUST be below 30.
+- If the resume is for a completely different profession, the match_score MUST be below 20.
 
 Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like \`\`\`json. DO NOT add conversational text:
 {
