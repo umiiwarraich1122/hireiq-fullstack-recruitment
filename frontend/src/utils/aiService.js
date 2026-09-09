@@ -114,7 +114,7 @@ Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown 
       Authorization: `Bearer ${GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "llama3-8b-8192",
+      model: "llama-3.1-8b-instant",
       temperature: 0.7,
       messages: [
         { role: "system", content: "You generate technical interview questions. You output raw valid JSON array only. No markdown, no prefixes." },
