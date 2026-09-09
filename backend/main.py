@@ -20,7 +20,7 @@ app.add_middleware(
 
 CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
 CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
-MODEL = "llama3.1-8b"
+MODEL = "qwen-3.8-27b"
 
 class ResumeParseRequest(BaseModel):
     resumeText: str
