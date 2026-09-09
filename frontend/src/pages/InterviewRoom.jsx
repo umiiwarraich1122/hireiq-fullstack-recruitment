@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../config/supabaseClient';
 import logo from '../components/hireiq_logo.jpg';
@@ -79,35 +79,21 @@ export default function InterviewRoom() {
           <div className="dash-card" style={{ background: 'var(--bg-card)' }}>
             <h3 style={{ color: 'var(--text-primary)', marginBottom: '16px' }}>Video Conference</h3>
             
-            <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-              <h4 style={{ color: '#6366f1', margin: '0 0 12px 0' }}>Step 1: Generate Link</h4>
+            <div style={{ marginBottom: '24px', padding: '20px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+              <h4 style={{ color: '#10B981', margin: '0 0 12px 0' }}>✅ Link Auto-Generated</h4>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
-                Click below to open Google Meet in a new tab, click 'New Meeting', and copy the generated link.
+                An invitation email has been sent to the candidate with this link.
               </p>
-              <a href="https://meet.google.com/new" target="_blank" rel="noreferrer" className="btn-outline" style={{ display: 'inline-block', textDecoration: 'none', color: 'var(--text-primary)', padding: '8px 16px' }}>
-                ➕ Create Google Meet
-              </a>
-            </div>
-
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ color: 'var(--text-primary)', margin: '0 0 12px 0' }}>Step 2: Save Meeting Link</h4>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '12px' }}>
-                Paste the copied link here so you and the candidate can join the same room.
-              </p>
-              <input 
-                type="text" 
-                value={meetLink} 
-                onChange={(e) => setMeetLink(e.target.value)} 
-                placeholder="e.g. https://meet.google.com/abc-defg-hij"
-                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'var(--text-primary)', marginBottom: '12px' }}
-              />
-              <button className="btn-outline" onClick={handleSaveLink}>💾 Save Link</button>
+              
+              <div style={{ background: 'var(--bg-heavy)', padding: '12px', borderRadius: '8px', wordBreak: 'break-all', fontFamily: 'monospace', color: 'var(--text-primary)', border: '1px solid var(--glass-border)' }}>
+                {meetLink || 'No link generated.'}
+              </div>
             </div>
 
             {meetLink && (
               <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
-                <a href={meetLink} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', fontSize: '1.1rem' }}>
-                  🎥 Join Meeting Room
+                <a href={meetLink} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', fontSize: '1.1rem', background: '#10B981', borderColor: '#10B981' }}>
+                  🎥 Join Google Meet
                 </a>
               </div>
             )}
