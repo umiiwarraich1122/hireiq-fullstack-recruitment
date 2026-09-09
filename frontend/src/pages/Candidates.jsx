@@ -113,6 +113,7 @@ export default function Candidates() {
       if (scheduleCandidate.email) {
         showToast('Sending invitation email...', 'info');
         const emailLines = [
+          `From: ${session.user.email}`,
           `To: ${scheduleCandidate.email}`,
           `Subject: Interview Scheduled: ${scheduleCandidate.job_role}`,
           "Content-Type: text/plain; charset=utf-8",
@@ -144,7 +145,12 @@ export default function Candidates() {
         const mailData = await mailRes.json();
         if (mailData.error) {
           console.warn("Email error:", mailData.error);
+          showToast(`Failed to send email: ${mailData.error.message}`, 'error');
+        } else {
+          showToast('Email sent successfully!', 'success');
         }
+      } else {
+        showToast('Candidate has no email address. Only link generated.', 'error');
       }
 
       // 3. Save Interview

@@ -535,16 +535,25 @@ export default function Dashboard() {
             
             <div className="dash-card">
               <h3>Upcoming Interviews</h3>
-              <div className="interview-item">
-                <div className="time">Today, 2:00 PM</div>
-                <div>Ayesha K. — Technical Round</div>
-                <button className="join-btn">Join Meet</button>
-              </div>
-              <div className="interview-item">
-                <div className="time">Tomorrow, 11:00 AM</div>
-                <div>Zainab M. — Culture Fit</div>
-                <button className="join-btn" disabled>Waiting</button>
-              </div>
+              {JSON.parse(localStorage.getItem('hireiq_interviews') || '[]')
+                .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time))
+                .slice(0, 3)
+                .map((intv) => (
+                <div className="interview-item" key={intv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)' }}>
+                  <div>
+                    <div className="time" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                      {new Date(intv.date + 'T' + intv.time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{intv.candidateName} — {intv.jobRole}</div>
+                  </div>
+                  <button className="join-btn" onClick={() => window.open(intv.meetLink || `/interview-room/${intv.id}`, '_blank')} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>
+                    Join Meet
+                  </button>
+                </div>
+              ))}
+              {JSON.parse(localStorage.getItem('hireiq_interviews') || '[]').length === 0 && (
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No upcoming interviews.</div>
+              )}
             </div>
           </div>
           
