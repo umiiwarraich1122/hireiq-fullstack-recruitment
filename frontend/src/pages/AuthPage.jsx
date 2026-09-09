@@ -15,7 +15,7 @@ export default function AuthPage() {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/dashboard`,
-          scopes: 'https://www.googleapis.com/auth/gmail.readonly',
+          scopes: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.events',
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

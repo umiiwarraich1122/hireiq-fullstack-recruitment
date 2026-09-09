@@ -14,6 +14,7 @@ export default function Candidates() {
   const [scheduleCandidate, setScheduleCandidate] = useState(null);
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewTime, setInterviewTime] = useState('');
+  const [session, setSession] = useState(null);
   const showToast = (text, type = 'success') => {
     setToastMessage({ text, type });
     setTimeout(() => {
@@ -22,8 +23,12 @@ export default function Candidates() {
   };
 
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { navigate('/login'); }
+      else { setSession(session); }
+    });
     fetchCandidates();
-  }, []);
+  }, [navigate]);
 
   const fetchCandidates = async () => {
     try {
@@ -58,28 +63,117 @@ export default function Candidates() {
     }
   };
 
-  const handleScheduleInterview = () => {
+  const handleScheduleInterview = async () => {
     if (!scheduleCandidate || !interviewDate || !interviewTime) {
       showToast('Please select date and time', 'error');
       return;
     }
-    const newInterview = {
-      id: Math.random().toString(36).substr(2, 9),
-      candidateId: scheduleCandidate.id,
-      candidateName: scheduleCandidate.name,
-      jobRole: scheduleCandidate.job_role,
-      date: interviewDate,
-      time: interviewTime,
-      createdAt: new Date().toISOString()
-    };
-    const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
-    stored.push(newInterview);
-    localStorage.setItem('hireiq_interviews', JSON.stringify(stored));
     
-    showToast(`Interview scheduled for ${scheduleCandidate.name}`, 'success');
-    setScheduleCandidate(null);
-    setInterviewDate('');
-    setInterviewTime('');
+    if (!session || !session.provider_token) {
+      showToast('Error: Please log out and log in again with Google to enable calendar access.', 'error');
+      return;
+    }
+
+    try {
+      showToast('Generating Google Meet Link...', 'info');
+
+      // 1. Create Google Calendar Event
+      const eventStart = new Date(`${interviewDate}T${interviewTime}:00`);
+      const eventEnd = new Date(eventStart.getTime() + 60*60*1000); // 1 hour duration
+      const event = {
+        summary: `Interview with ${scheduleCandidate.name} - ${scheduleCandidate.job_role}`,
+        description: `Scheduled via HireIQ for ${scheduleCandidate.job_role}`,
+        start: { dateTime: eventStart.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+        end: { dateTime: eventEnd.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+        conferenceData: {
+          createRequest: {
+            requestId: `hireiq-${Math.random().toString(36).substring(7)}`,
+            conferenceSolutionKey: { type: "hangoutsMeet" }
+          }
+        }
+      };
+
+      const calRes = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.provider_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(event)
+      });
+      const calData = await calRes.json();
+      
+      if (calData.error) {
+        throw new Error(calData.error.message || "Failed to create calendar event");
+      }
+      
+      const meetLink = calData.hangoutLink || "No link generated";
+
+      // 2. Send Email via Gmail API
+      if (scheduleCandidate.email) {
+        showToast('Sending invitation email...', 'info');
+        const emailLines = [
+          `To: ${scheduleCandidate.email}`,
+          `Subject: Interview Scheduled: ${scheduleCandidate.job_role}`,
+          "Content-Type: text/plain; charset=utf-8",
+          "",
+          `Dear ${scheduleCandidate.name},`,
+          "",
+          `Thank you for applying to our company. We have scheduled an interview with you for the role of ${scheduleCandidate.job_role}.`,
+          "",
+          `Date: ${interviewDate}`,
+          `Time: ${interviewTime}`,
+          "",
+          `Please join the video interview using this Google Meet link:`,
+          `${meetLink}`,
+          "",
+          "Best regards,",
+          "HR Team"
+        ];
+        const rawEmail = emailLines.join("\r\n");
+        const encodedEmail = btoa(unescape(encodeURIComponent(rawEmail))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        
+        const mailRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session.provider_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ raw: encodedEmail })
+        });
+        const mailData = await mailRes.json();
+        if (mailData.error) {
+          console.warn("Email error:", mailData.error);
+        }
+      }
+
+      // 3. Save Interview
+      const newInterview = {
+        id: Math.random().toString(36).substr(2, 9),
+        candidateId: scheduleCandidate.id,
+        candidateName: scheduleCandidate.name,
+        jobRole: scheduleCandidate.job_role,
+        date: interviewDate,
+        time: interviewTime,
+        meetLink: meetLink,
+        createdAt: new Date().toISOString()
+      };
+      const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
+      stored.push(newInterview);
+      localStorage.setItem('hireiq_interviews', JSON.stringify(stored));
+      
+      showToast(`Interview scheduled and email sent to ${scheduleCandidate.name}!`, 'success');
+      setScheduleCandidate(null);
+      setInterviewDate('');
+      setInterviewTime('');
+    } catch (err) {
+      console.error(err);
+      if (err.message.includes('Insufficient Permission') || err.message.includes('insufficient')) {
+        showToast('Permission denied. Please Sign Out and Sign In again with Google to allow Calendar and Email access.', 'error');
+      } else {
+        showToast(`Failed to schedule: ${err.message}`, 'error');
+      }
+    }
   };
 
   const confirmDelete = async () => {
