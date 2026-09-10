@@ -23,8 +23,23 @@ export default function Results() {
   const passedCandidates = interviews.filter(i => i.status === 'Passed');
   const failedCandidates = interviews.filter(i => i.status === 'Failed');
 
+  const handleDelete = (id) => {
+    if (!window.confirm("Are you sure you want to delete this record?")) return;
+    const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
+    const updated = stored.filter(i => i.id !== id);
+    localStorage.setItem('hireiq_interviews', JSON.stringify(updated));
+    setInterviews(updated);
+  };
+
   const handleOpenSchedule = (intv) => {
     setSelectedCandidate(intv);
+    if (intv.physicalDate) {
+      setPhysDate(intv.physicalDate);
+      setPhysTime(intv.physicalTime);
+    } else {
+      setPhysDate('');
+      setPhysTime('');
+    }
     setShowModal(true);
   };
 
@@ -58,17 +73,20 @@ export default function Results() {
         if (!candidateEmail) throw new Error("Email is required to send the invitation.");
       }
 
+      const isReschedule = !!selectedCandidate.physicalDate;
       const emailLines = [
         `From: ${session.user.email}`,
         `To: ${candidateEmail}`,
-        `Subject: Invitation for Physical Interview: ${selectedCandidate.jobRole}`,
+        `Subject: ${isReschedule ? 'Rescheduled:' : ''} Invitation for Physical Interview: ${selectedCandidate.jobRole}`,
         "Content-Type: text/plain; charset=utf-8",
         "",
         `Dear ${selectedCandidate.candidateName},`,
         "",
-        `Congratulations! You have passed the online interview for the role of ${selectedCandidate.jobRole}.`,
+        isReschedule 
+          ? `Your physical interview for the role of ${selectedCandidate.jobRole} has been rescheduled.`
+          : `Congratulations! You have passed the online interview for the role of ${selectedCandidate.jobRole}. We would like to invite you for a physical interview.`,
         "",
-        `We would like to invite you for a physical interview. Details are as follows:`,
+        `Details are as follows:`,
         `Date: ${physDate}`,
         `Time: ${physTime}`,
         `Location: Zylo Solution, Lahore Phase 6, Sector D`,
@@ -94,7 +112,14 @@ export default function Results() {
         throw new Error(mailData.error.message);
       }
       
-      alert("Physical interview scheduled and email sent successfully!");
+      alert(`Physical interview ${isReschedule ? 'rescheduled' : 'scheduled'} and email sent successfully!`);
+      
+      // Save state
+      const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
+      const updated = stored.map(i => i.id === selectedCandidate.id ? { ...i, physicalDate: physDate, physicalTime: physTime } : i);
+      localStorage.setItem('hireiq_interviews', JSON.stringify(updated));
+      setInterviews(updated);
+      
       setShowModal(false);
       setPhysDate('');
       setPhysTime('');
@@ -138,11 +163,19 @@ export default function Results() {
               <button 
                 onClick={() => handleOpenSchedule(intv)}
                 className="btn-primary" 
-                style={{ width: '100%', padding: '8px', fontSize: '0.9rem' }}
+                style={{ width: '100%', padding: '8px', fontSize: '0.9rem', marginBottom: '8px' }}
               >
-                📅 Schedule Physical Interview
+                {intv.physicalDate ? '🔄 Reschedule Physical Interview' : '📅 Schedule Physical Interview'}
               </button>
             )}
+            
+            <button 
+              onClick={() => handleDelete(intv.id)}
+              className="btn-outline" 
+              style={{ width: '100%', padding: '8px', fontSize: '0.9rem', borderColor: '#EF4444', color: '#EF4444' }}
+            >
+              🗑️ Delete Record
+            </button>
           </div>
         ))}
       </div>
