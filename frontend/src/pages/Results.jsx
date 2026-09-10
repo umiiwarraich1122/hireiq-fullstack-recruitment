@@ -14,6 +14,12 @@ export default function Results() {
   const [physDate, setPhysDate] = useState('');
   const [physTime, setPhysTime] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
@@ -45,7 +51,7 @@ export default function Results() {
 
   const handleSendEmail = async () => {
     if (!physDate || !physTime) {
-      alert("Please select both date and time.");
+      showToast("Please select both date and time.", "error");
       return;
     }
     
@@ -112,7 +118,7 @@ export default function Results() {
         throw new Error(mailData.error.message);
       }
       
-      alert(`Physical interview ${isReschedule ? 'rescheduled' : 'scheduled'} and email sent successfully!`);
+      showToast(`Physical interview ${isReschedule ? 'rescheduled' : 'scheduled'} and email sent successfully!`, 'success');
       
       // Save state
       const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
@@ -125,7 +131,7 @@ export default function Results() {
       setPhysTime('');
     } catch (err) {
       console.error(err);
-      alert(`Error: ${err.message}`);
+      showToast(`Error: ${err.message}`, 'error');
     } finally {
       setIsSending(false);
     }
@@ -300,6 +306,20 @@ export default function Results() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Toast Notification */}
+        {toast && (
+          <div className={`toast-notification ${toast.type}`} style={{
+            position: 'fixed', bottom: '24px', right: '24px', 
+            padding: '12px 24px', borderRadius: '8px',
+            background: toast.type === 'error' ? '#EF4444' : '#10B981',
+            color: 'white', fontWeight: 'bold', zIndex: 9999,
+            boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+            animation: 'fadeInUp 0.3s ease'
+          }}>
+            {toast.message}
           </div>
         )}
       </main>
