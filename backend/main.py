@@ -100,9 +100,10 @@ Resume Text:
 
 @app.post("/api/generate-questions")
 async def generate_questions(req: QuestionRequest):
-    if not CEREBRAS_API_KEY:
-        raise HTTPException(status_code=500, detail="CEREBRAS_API_KEY is not set in backend .env")
-        
+    OLLAMA_URL = "http://localhost:11434/v1/chat/completions"
+    # Fallback default model for Ollama if user hasn't specified. Adjust if needed.
+    OLLAMA_MODEL = "llama3.2:3b"
+    
     prompt = f"""You are an expert technical interviewer. I am an HR recruiter who doesn't know much about technical fields.
 Generate 5 technical interview questions and their easy-to-understand answers for a "{req.jobRole}" role. 
 The questions should evaluate their core knowledge. Keep the answers concise so I can quickly read them before the interview.
@@ -118,17 +119,16 @@ Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown 
     async with httpx.AsyncClient() as client:
         try:
             res = await client.post(
-                CEREBRAS_URL,
-                headers={"Authorization": f"Bearer {CEREBRAS_API_KEY}"},
+                OLLAMA_URL,
                 json={
-                    "model": MODEL,
+                    "model": OLLAMA_MODEL,
                     "temperature": 0.7,
                     "messages": [
                         {"role": "system", "content": "You generate technical interview questions. You output raw valid JSON array only. No markdown, no prefixes."},
                         {"role": "user", "content": prompt}
                     ]
                 },
-                timeout=30.0
+                timeout=60.0 # Increased timeout for local LLMs which might take longer
             )
             res.raise_for_status()
             data = res.json()
@@ -142,5 +142,5 @@ Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown 
                 
             return json.loads(content)
         except Exception as e:
-            print("Cerebras QA Error:", e)
-            raise HTTPException(status_code=500, detail=str(e))
+            print("Ollama QA Error:", e)
+            raise HTTPException(status_code=500, detail=f"Ollama Error: Make sure Ollama is running! {str(e)}")
