@@ -235,7 +235,7 @@ export default function Results() {
                   type="date" 
                   value={physDate}
                   onChange={e => setPhysDate(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'white', color: 'black', colorScheme: 'light' }}
                 />
               </div>
 
@@ -245,7 +245,7 @@ export default function Results() {
                   type="time" 
                   value={physTime}
                   onChange={e => setPhysTime(e.target.value)}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'white' }}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'white', color: 'black', colorScheme: 'light' }}
                 />
               </div>
 
