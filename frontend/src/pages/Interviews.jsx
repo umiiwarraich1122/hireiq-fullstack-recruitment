@@ -34,10 +34,11 @@ export default function Interviews() {
           <span>HireIQ</span>
         </div>
         <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}><span>📊</span> Overview</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}><span>📥</span> Inbox</a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}><span>⊞</span> Overview</a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}><span>✉️</span> Inbox</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}><span>👥</span> Candidates</a>
-          <a href="#" className="dash-link active"><span>📅</span> Interview Schedule</a>
+          <a href="#" className="dash-link active"><span>📅</span> Interviews</a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/results'); }}><span>✅</span> Results</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}><span>💼</span> Open Roles</a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}><span>📈</span> Analytics</a>
         </nav>

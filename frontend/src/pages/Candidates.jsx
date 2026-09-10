@@ -225,6 +225,9 @@ export default function Candidates() {
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/interviews'); }}>
             <span>📅</span> Interviews
           </a>
+          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/results'); }}>
+            <span>✅</span> Results
+          </a>
           <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
             <span>💼</span> Open Roles
           </a>
