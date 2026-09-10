@@ -46,6 +46,14 @@ export default function InterviewRoom() {
     }
   };
 
+  const handleUpdateStatus = (newStatus) => {
+    const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
+    const updated = stored.map(i => i.id === id ? { ...i, status: newStatus } : i);
+    localStorage.setItem('hireiq_interviews', JSON.stringify(updated));
+    setInterview(prev => ({ ...prev, status: newStatus }));
+    alert(`Candidate marked as ${newStatus}!`);
+  };
+
   if (!interview) return <div style={{ color: 'white', padding: '40px', textAlign: 'center' }}>Loading Room...</div>;
 
   return (
@@ -109,11 +117,29 @@ export default function InterviewRoom() {
 
             {meetLink && (
               <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px' }}>
-                <a href={meetLink} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', fontSize: '1.1rem', background: '#10B981', borderColor: '#10B981' }}>
+                <a href={meetLink} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '12px', fontSize: '1.1rem', background: '#10B981', borderColor: '#10B981', marginBottom: '16px' }}>
                   🎥 Join Google Meet
                 </a>
               </div>
             )}
+
+            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop: '10px' }}>
+              <h4 style={{ color: 'var(--text-primary)', marginBottom: '12px', fontSize: '1rem' }}>Interview Result</h4>
+              {interview.status ? (
+                <div style={{ padding: '12px', borderRadius: '8px', textAlign: 'center', fontWeight: 'bold', background: interview.status === 'Passed' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', color: interview.status === 'Passed' ? '#10B981' : '#EF4444', border: `1px solid ${interview.status === 'Passed' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}` }}>
+                  {interview.status === 'Passed' ? '✅ Candidate Passed' : '❌ Candidate Failed'}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={() => handleUpdateStatus('Passed')} className="btn-primary" style={{ flex: 1, background: '#10B981', borderColor: '#10B981' }}>
+                    ✅ Pass
+                  </button>
+                  <button onClick={() => handleUpdateStatus('Failed')} className="btn-primary" style={{ flex: 1, background: '#EF4444', borderColor: '#EF4444' }}>
+                    ❌ Fail
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

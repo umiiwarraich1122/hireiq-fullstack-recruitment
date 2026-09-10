@@ -11,6 +11,7 @@ import OpenRoles from './pages/OpenRoles';
 import Analytics from './pages/Analytics';
 import Interviews from './pages/Interviews';
 import InterviewRoom from './pages/InterviewRoom';
+import Results from './pages/Results';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/interviews" element={<Interviews />} />
           <Route path="/interview-room/:id" element={<InterviewRoom />} />
+          <Route path="/results" element={<Results />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
