@@ -25,7 +25,7 @@ export const analyzeResumeText = async (resumeText, targetRole = "Software Devel
   }
 };
 
-export const generateInterviewQuestions = async (jobRole) => {
+export const generateInterviewQuestions = async (jobRole, skills = '', summary = '') => {
   try {
     const res = await fetch(`${BACKEND_URL}/api/generate-questions`, {
       method: "POST",
@@ -33,7 +33,9 @@ export const generateInterviewQuestions = async (jobRole) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        jobRole: jobRole
+        jobRole: jobRole,
+        candidateSkills: Array.isArray(skills) ? skills.join(", ") : skills,
+        candidateSummary: summary
       }),
     });
 

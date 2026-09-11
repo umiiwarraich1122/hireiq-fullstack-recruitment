@@ -28,6 +28,8 @@ class ResumeParseRequest(BaseModel):
 
 class QuestionRequest(BaseModel):
     jobRole: str
+    candidateSkills: str = ""
+    candidateSummary: str = ""
 
 @app.get("/")
 def read_root():
@@ -101,13 +103,22 @@ Resume Text:
 
 @app.post("/api/generate-questions")
 async def generate_questions(req: QuestionRequest):
-    OLLAMA_URL = "http://localhost:11434/v1/chat/completions"
-    # Fallback default model for Ollama if user hasn't specified. Adjust if needed.
-    OLLAMA_MODEL = "llama3.2:3b"
-    
-    prompt = f"""You are an expert technical interviewer. I am an HR recruiter who doesn't know much about technical fields.
-Generate 5 technical interview questions and their easy-to-understand answers for a "{req.jobRole}" role. 
-The questions should evaluate their core knowledge. Keep the answers concise so I can quickly read them before the interview.
+    try:
+        from langchain_community.chat_models import ChatOllama
+        from langchain.prompts import PromptTemplate
+        from langchain_core.output_parsers import JsonOutputParser
+        
+        # We assume local Ollama is running on default port
+        llm = ChatOllama(model="llama3.2:3b", temperature=0.7)
+        
+        template = """You are an expert technical interviewer.
+I need 5 technical interview questions and their concise answers for a candidate applying for the "{job_role}" role.
+
+Candidate's Background Summary: {summary}
+Candidate's Skills: {skills}
+
+Generate questions that are highly relevant to their specific skills and background. 
+If their skills are empty, just ask general questions for the {job_role} role.
 
 Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like ```json:
 [
@@ -116,32 +127,23 @@ Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown 
     "answer": "The concise, correct technical answer"
   }}
 ]"""
+        
+        prompt = PromptTemplate(
+            template=template,
+            input_variables=["job_role", "summary", "skills"]
+        )
+        
+        parser = JsonOutputParser()
+        chain = prompt | llm | parser
+        
+        result = chain.invoke({
+            "job_role": req.jobRole,
+            "summary": req.candidateSummary or "No summary available",
+            "skills": req.candidateSkills or "No specific skills listed"
+        })
+        
+        return result
 
-    async with httpx.AsyncClient() as client:
-        try:
-            res = await client.post(
-                OLLAMA_URL,
-                json={
-                    "model": OLLAMA_MODEL,
-                    "temperature": 0.7,
-                    "messages": [
-                        {"role": "system", "content": "You generate technical interview questions. You output raw valid JSON array only. No markdown, no prefixes."},
-                        {"role": "user", "content": prompt}
-                    ]
-                },
-                timeout=60.0 # Increased timeout for local LLMs which might take longer
-            )
-            res.raise_for_status()
-            data = res.json()
-            content = data["choices"][0]["message"]["content"]
-            
-            content = content.replace("```json", "").replace("```", "").strip()
-            start = content.find("[")
-            end = content.rfind("]")
-            if start != -1 and end != -1:
-                content = content[start:end+1]
-                
-            return json.loads(content)
-        except Exception as e:
-            print("Ollama QA Error:", e)
-            raise HTTPException(status_code=500, detail=f"Ollama Error: Make sure Ollama is running! {str(e)}")
+    except Exception as e:
+        print("Ollama QA Error:", e)
+        raise HTTPException(status_code=500, detail=f"Ollama Error: Make sure Ollama is running! {str(e)}")

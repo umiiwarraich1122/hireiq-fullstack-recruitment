@@ -36,7 +36,7 @@ export default function InterviewRoom() {
     if (!interview) return;
     try {
       setIsLoadingQA(true);
-      const qa = await generateInterviewQuestions(interview.jobRole);
+      const qa = await generateInterviewQuestions(interview.jobRole, interview.skills, interview.summary);
       setQuestions(qa);
     } catch (err) {
       console.error(err);

@@ -159,6 +159,8 @@ export default function Candidates() {
         candidateId: scheduleCandidate.id,
         candidateName: scheduleCandidate.name,
         jobRole: scheduleCandidate.job_role,
+        skills: scheduleCandidate.skills || '',
+        summary: scheduleCandidate.summary || '',
         date: interviewDate,
         time: interviewTime,
         meetLink: meetLink,
