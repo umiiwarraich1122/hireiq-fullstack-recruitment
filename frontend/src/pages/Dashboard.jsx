@@ -424,103 +424,6 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Active Candidates / Kanban Preview */}
-          <div className="dash-section-header">
-            <h3>Recent High-Match Candidates</h3>
-            <a href="#" className="view-all">View all pipeline →</a>
-          </div>
-
-          <div className="candidate-list">
-            {scannedCandidates.filter(c => c.matchScore >= 75).length === 0 ? (
-              <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-heavy)', borderRadius: '12px', border: '1px dashed var(--glass-border)' }}>
-                No high-match candidates verified yet. Run AI scan to find top matches!
-              </div>
-            ) : (
-              scannedCandidates
-                .filter(c => c.matchScore >= 75)
-                .sort((a, b) => b.matchScore - a.matchScore)
-                .map((c, i) => (
-                <motion.div 
-                  key={c.id} 
-                  className="candidate-row"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                >
-                  <div className="c-info">
-                    <div className="c-avatar">{c.name.charAt(0)}</div>
-                    <div>
-                      <div className="c-name">{c.name}</div>
-                      <div className="c-role">{c.targetRole || "Candidate"}</div>
-                    </div>
-                  </div>
-                  <div className="c-score">
-                    <div className="score-val">{c.matchScore}% Match</div>
-                    <div className="score-bar">
-                      <div className="score-fill" style={{ width: `${c.matchScore}%`, background: 'var(--green)' }}></div>
-                    </div>
-                  </div>
-                  <div className="c-tags">
-                    {c.github && <span className="tag tag-green">GitHub Verified</span>}
-                    {c.experience && <span className="tag tag-blue">{c.experience} Yrs Exp</span>}
-                  </div>
-                  <div className="c-actions">
-                    <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>View</button>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-
-          {/* AI Activity Log */}
-          <div className="dash-grid-2">
-            <div className="dash-card">
-              <h3>System Activity (AI Agents)</h3>
-              <ul className="activity-list">
-                {systemActivity.length === 0 ? (
-                  <li style={{ color: 'var(--text-muted)' }}>Waiting for AI agents to start working...</li>
-                ) : (
-                  systemActivity.map(activity => (
-                    <motion.li 
-                      key={activity.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                    >
-                      <span className={`dot dot-${activity.color}`}></span>
-                      <div>
-                        <strong>{activity.agentName}</strong> {activity.action}
-                        <span className="time">{activity.time}</span>
-                      </div>
-                    </motion.li>
-                  ))
-                )}
-              </ul>
-            </div>
-            
-            <div className="dash-card">
-              <h3>Upcoming Interviews</h3>
-              {JSON.parse(localStorage.getItem('hireiq_interviews') || '[]')
-                .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time))
-                .slice(0, 3)
-                .map((intv) => (
-                <div className="interview-item" key={intv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)' }}>
-                  <div>
-                    <div className="time" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
-                      {new Date(intv.date + 'T' + intv.time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    <div style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{intv.candidateName} — {intv.jobRole}</div>
-                  </div>
-                  <button className="join-btn" onClick={() => window.open(intv.meetLink || `/interview-room/${intv.id}`, '_blank')} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>
-                    Join Meet
-                  </button>
-                </div>
-              ))}
-              {JSON.parse(localStorage.getItem('hireiq_interviews') || '[]').length === 0 && (
-                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No upcoming interviews.</div>
-              )}
-            </div>
-          </div>
-          
           {/* AI Screening Pipeline */}
           <div className="card" style={{ marginTop: '24px', gridColumn: '1 / -1' }}>
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -709,6 +612,104 @@ export default function Dashboard() {
               )}
             </div>
           </div>
+
+          {/* Active Candidates / Kanban Preview */}
+          <div className="dash-section-header">
+            <h3>Recent High-Match Candidates</h3>
+            <a href="#" className="view-all">View all pipeline →</a>
+          </div>
+
+          <div className="candidate-list">
+            {scannedCandidates.filter(c => c.matchScore >= 75).length === 0 ? (
+              <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-heavy)', borderRadius: '12px', border: '1px dashed var(--glass-border)' }}>
+                No high-match candidates verified yet. Run AI scan to find top matches!
+              </div>
+            ) : (
+              scannedCandidates
+                .filter(c => c.matchScore >= 75)
+                .sort((a, b) => b.matchScore - a.matchScore)
+                .map((c, i) => (
+                <motion.div 
+                  key={c.id} 
+                  className="candidate-row"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                >
+                  <div className="c-info">
+                    <div className="c-avatar">{c.name.charAt(0)}</div>
+                    <div>
+                      <div className="c-name">{c.name}</div>
+                      <div className="c-role">{c.targetRole || "Candidate"}</div>
+                    </div>
+                  </div>
+                  <div className="c-score">
+                    <div className="score-val">{c.matchScore}% Match</div>
+                    <div className="score-bar">
+                      <div className="score-fill" style={{ width: `${c.matchScore}%`, background: 'var(--green)' }}></div>
+                    </div>
+                  </div>
+                  <div className="c-tags">
+                    {c.github && <span className="tag tag-green">GitHub Verified</span>}
+                    {c.experience && <span className="tag tag-blue">{c.experience} Yrs Exp</span>}
+                  </div>
+                  <div className="c-actions">
+                    <button className="btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>View</button>
+                  </div>
+                </motion.div>
+              ))
+            )}
+          </div>
+
+          {/* AI Activity Log */}
+          <div className="dash-grid-2">
+            <div className="dash-card">
+              <h3>System Activity (AI Agents)</h3>
+              <ul className="activity-list">
+                {systemActivity.length === 0 ? (
+                  <li style={{ color: 'var(--text-muted)' }}>Waiting for AI agents to start working...</li>
+                ) : (
+                  systemActivity.map(activity => (
+                    <motion.li 
+                      key={activity.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                    >
+                      <span className={`dot dot-${activity.color}`}></span>
+                      <div>
+                        <strong>{activity.agentName}</strong> {activity.action}
+                        <span className="time">{activity.time}</span>
+                      </div>
+                    </motion.li>
+                  ))
+                )}
+              </ul>
+            </div>
+            
+            <div className="dash-card">
+              <h3>Upcoming Interviews</h3>
+              {JSON.parse(localStorage.getItem('hireiq_interviews') || '[]')
+                .sort((a, b) => new Date(a.date + 'T' + a.time) - new Date(b.date + 'T' + b.time))
+                .slice(0, 3)
+                .map((intv) => (
+                <div className="interview-item" key={intv.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)' }}>
+                  <div>
+                    <div className="time" style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '4px' }}>
+                      {new Date(intv.date + 'T' + intv.time).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div style={{ color: 'var(--text-primary)', fontWeight: '500' }}>{intv.candidateName} — {intv.jobRole}</div>
+                  </div>
+                  <button className="join-btn" onClick={() => window.open(intv.meetLink || `/interview-room/${intv.id}`, '_blank')} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}>
+                    Join Meet
+                  </button>
+                </div>
+              ))}
+              {JSON.parse(localStorage.getItem('hireiq_interviews') || '[]').length === 0 && (
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '20px' }}>No upcoming interviews.</div>
+              )}
+            </div>
+          </div>
+          
         </div>
       </main>
       <NovaChatbot 
