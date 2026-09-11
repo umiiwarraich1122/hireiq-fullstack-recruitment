@@ -50,6 +50,7 @@ CRITICAL SCORING INSTRUCTIONS:
 - STRICT PENALTY FOR CAREER MISALIGNMENT: If the candidate's primary interest, objective, or dominant experience points toward a different field (e.g. AI/Machine Learning when the role is Full Stack), the match_score MUST be below 40.
 - Heavily penalize if the candidate's core skills are irrelevant to "{req.targetRole}".
 - If the resume is for a completely different profession, the match_score MUST be below 20.
+- **EXPERIENCE CALCULATION RULE**: Count ONLY actual professional work experience, internships, or full-time jobs. DO NOT count the duration of their university degree (e.g. BS CS 2020-2024) as work experience. If they are a fresh graduate with no real jobs, their `experience_years` MUST be 0.
 
 Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like ```json. DO NOT add conversational text:
 {{
