@@ -620,14 +620,14 @@ export default function Dashboard() {
           </div>
 
           <div className="candidate-list">
-            {scannedCandidates.filter(c => c.matchScore >= 75).length === 0 ? (
+            {scannedCandidates.length === 0 ? (
               <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)', background: 'var(--bg-heavy)', borderRadius: '12px', border: '1px dashed var(--glass-border)' }}>
-                No high-match candidates verified yet. Run AI scan to find top matches!
+                No candidates verified yet. Run AI scan to find top matches!
               </div>
             ) : (
-              scannedCandidates
-                .filter(c => c.matchScore >= 75)
+              [...scannedCandidates]
                 .sort((a, b) => b.matchScore - a.matchScore)
+                .slice(0, 5)
                 .map((c, i) => (
                 <motion.div 
                   key={c.id} 
