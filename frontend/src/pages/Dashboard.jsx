@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import { useEffect, useState } from 'react';
 import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 import { supabase } from '../config/supabaseClient';
 import NovaChatbot from '../components/NovaChatbot';
 import JobRoleModal from '../components/JobRoleModal';
@@ -301,10 +302,6 @@ export default function Dashboard() {
     setManualGitLink('');
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
   const handleShortlist = async (candidate) => {
     if (shortlistingIds[candidate.id]) return;
     setShortlistingIds(prev => ({ ...prev, [candidate.id]: true }));
@@ -342,44 +339,14 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        
-        <nav className="dash-nav">
-          <a href="#" className="dash-link active">
-            <span>⊞</span> Overview
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
-            <span>✉️</span> Inbox
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
-            <span>👥</span> Candidates
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/interviews'); }}>
-            <span>📅</span> Interviews
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
-            <span>💼</span> Open Roles
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>
-            <span>📈</span> Analytics
-          </a>
-          <a href="#" className="dash-link">
-            <span>⚙️</span> Settings
-          </a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/dashboard" />
 
       {/* Main Content */}
       <main className="dash-main">
         {/* Top Header */}
         <header className="dash-header">
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
+            <h1 className="page-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>
               Welcome back, {user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'User'}!
             </h1>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Here is what's happening with your recruitment pipeline today.</p>
@@ -390,9 +357,6 @@ export default function Dashboard() {
               <span>✨</span> Nova (AI Post Generator)
             </button>
             <button className="btn-outline" onClick={() => setIsJobModalOpen(true)} style={{ padding: '10px 20px', fontSize: '0.85rem' }}>+ New Job Role</button>
-            <button className="btn-outline" onClick={handleLogout} style={{ padding: '10px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
-              Sign Out
-            </button>
             <div className="user-avatar">
               <img src={user.user_metadata?.avatar_url || '/images/umair.jpg'} alt="User" />
             </div>

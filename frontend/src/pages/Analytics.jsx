@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../config/supabaseClient';
-import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 
 export default function Analytics() {
   const navigate = useNavigate();
@@ -75,49 +75,18 @@ export default function Analytics() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-  };
 
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        
-        <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>
-            <span>📊</span> Overview
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
-            <span>📥</span> Inbox
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
-            <span>👥</span> Candidates
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
-            <span>💼</span> Open Roles
-          </a>
-          <a href="#" className="dash-link active">
-            <span>📈</span> Analytics
-          </a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/analytics" />
 
       {/* Main Content */}
       <main className="dash-main">
         <header className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0 }}>Analytics Overview</h2>
+            <h2 className="page-title" style={{ margin: 0 }}>Analytics Overview</h2>
             <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Insights into your recruitment pipeline</p>
           </div>
-          <button className="btn-outline" onClick={handleLogout} style={{ padding: '8px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
-            Sign Out
-          </button>
         </header>
 
         <div className="dash-content">

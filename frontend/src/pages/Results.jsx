@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../config/supabaseClient';
-import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 
 export default function Results() {
   const navigate = useNavigate();
@@ -190,43 +190,13 @@ export default function Results() {
 
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        
-        <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>
-            <span>⊞</span> Overview
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
-            <span>✉️</span> Inbox
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
-            <span>👥</span> Candidates
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/interviews'); }}>
-            <span>📅</span> Interviews
-          </a>
-          <a href="#" className="dash-link active">
-            <span>✅</span> Results
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
-            <span>💼</span> Open Roles
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>
-            <span>📈</span> Analytics
-          </a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/results" />
 
       {/* Main Content */}
       <main className="dash-main">
         <header className="dash-header">
           <div className="header-search">
-            <h2>Interview Results</h2>
+            <h2 className="page-title">Interview Results</h2>
           </div>
         </header>
 

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ThemeToggle from '../components/ThemeToggle';
 import { useEffect, useState, useRef } from 'react';
-import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 import { supabase } from '../config/supabaseClient';
 
 // Helper to decode Base64Url from Gmail API
@@ -172,43 +172,17 @@ export default function EmailPage() {
 
   return (
     <div className="dashboard-layout" style={{ height: '100vh', overflow: 'hidden' }}>
-      {/* Sidebar */}
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>
-            <span>⊞</span> Overview
-          </a>
-          <a href="#" className="dash-link active">
-            <span>✉️</span> Inbox
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
-            <span>👥</span> Candidates
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}>
-            <span>💼</span> Open Roles
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>
-            <span>📈</span> Analytics
-          </a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/emails" />
 
       {/* Main Content Area */}
       <main className="dash-main" style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
         <header className="dash-header">
           <div>
-            <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>HR Inbox</h1>
+            <h1 className="page-title" style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>HR Inbox</h1>
             <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Read and manage all candidate communications directly.</p>
           </div>
           <div className="dash-header-actions">
             <ThemeToggle />
-            <button className="btn-outline" onClick={handleLogout} style={{ padding: '10px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
-              Sign Out
-            </button>
             <div className="user-avatar">
               <img src={user.user_metadata?.avatar_url || '/images/umair.jpg'} alt="User" />
             </div>

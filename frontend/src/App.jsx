@@ -12,6 +12,7 @@ import Analytics from './pages/Analytics';
 import Interviews from './pages/Interviews';
 import InterviewRoom from './pages/InterviewRoom';
 import Results from './pages/Results';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/interviews" element={<Interviews />} />
           <Route path="/interview-room/:id" element={<InterviewRoom />} />
           <Route path="/results" element={<Results />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

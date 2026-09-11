@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../config/supabaseClient';
-import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 import { motion } from 'framer-motion';
 
 export default function Interviews() {
@@ -18,7 +18,6 @@ export default function Interviews() {
     setInterviews(stored);
   }, [navigate]);
 
-  const handleLogout = async () => { await supabase.auth.signOut(); };
 
   const removeInterview = (id) => {
     const updated = interviews.filter(i => i.id !== id);
@@ -28,26 +27,11 @@ export default function Interviews() {
 
   return (
     <div className="dashboard-layout">
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}><span>⊞</span> Overview</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}><span>✉️</span> Inbox</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}><span>👥</span> Candidates</a>
-          <a href="#" className="dash-link active"><span>📅</span> Interviews</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/results'); }}><span>✅</span> Results</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/open-roles'); }}><span>💼</span> Open Roles</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}><span>📈</span> Analytics</a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/interviews" />
 
       <main className="dash-main">
         <header className="dash-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h2>Interview Schedule</h2>
-          <button className="btn-outline" onClick={handleLogout} style={{ padding: '8px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>Sign Out</button>
+          <h2 className="page-title">Interview Schedule</h2>
         </header>
 
         <div className="dash-content">

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../config/supabaseClient';
 import { generateInterviewQuestions } from '../utils/aiService';
-import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 
 export default function InterviewRoom() {
   const { id } = useParams();
@@ -58,20 +58,11 @@ export default function InterviewRoom() {
 
   return (
     <div className="dashboard-layout">
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}><span>📊</span> Overview</a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/interviews'); }}><span>⬅️</span> Back to Schedule</a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/interviews" />
 
       <main className="dash-main">
         <header className="dash-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h2>Interview Room</h2>
+          <h2 className="page-title">Interview Room</h2>
         </header>
 
         <div className="dash-content" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>

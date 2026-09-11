@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../config/supabaseClient';
-import logo from '../components/hireiq_logo.jpg';
+import Sidebar from '../components/Sidebar';
 import JobRoleModal from '../components/JobRoleModal';
 
 export default function OpenRoles() {
@@ -77,52 +77,20 @@ export default function OpenRoles() {
     }
   };
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
-  };
-
   return (
     <div className="dashboard-layout">
-      {/* Sidebar */}
-      <aside className="dash-sidebar">
-        <div className="nav-logo" style={{ marginBottom: '40px', cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <img src={logo} alt="HireIQ Logo" className="logo-img" />
-          <span>HireIQ</span>
-        </div>
-        
-        <nav className="dash-nav">
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>
-            <span>📊</span> Overview
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/emails'); }}>
-            <span>📥</span> Inbox
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/candidates'); }}>
-            <span>👥</span> Candidates
-          </a>
-          <a href="#" className="dash-link active">
-            <span>💼</span> Open Roles
-          </a>
-          <a href="#" className="dash-link" onClick={(e) => { e.preventDefault(); navigate('/analytics'); }}>
-            <span>📈</span> Analytics
-          </a>
-        </nav>
-      </aside>
+      <Sidebar activePage="/open-roles" />
 
       {/* Main Content */}
       <main className="dash-main">
         <header className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0 }}>Open Roles</h2>
+            <h2 className="page-title" style={{ margin: 0 }}>Open Roles</h2>
             <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Manage your hiring pipeline</p>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button className="btn-glow" onClick={() => setIsJobModalOpen(true)} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
               + Create Role
-            </button>
-            <button className="btn-outline" onClick={handleLogout} style={{ padding: '8px 16px', fontSize: '0.85rem', borderColor: 'var(--red-soft)', color: 'var(--red)' }}>
-              Sign Out
             </button>
           </div>
         </header>
