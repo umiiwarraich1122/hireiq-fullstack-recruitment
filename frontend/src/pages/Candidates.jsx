@@ -156,8 +156,8 @@ export default function Candidates() {
       // 3. Send WhatsApp via WAHA
       try {
         const waMsg = `Hi ${scheduleCandidate.name},\n\nYour interview for ${scheduleCandidate.job_role} is scheduled.\nDate: ${interviewDate}\nTime: ${interviewTime}\nMeet Link: ${meetLink}\n\n- HR Team`;
-        // Use candidate phone if available, else fallback to 03353958839 as requested by user for testing
-        const targetPhone = scheduleCandidate.phone || "03353958839"; 
+        // Use candidate's WhatsApp number from CV, then phone, then fallback
+        const targetPhone = scheduleCandidate.whatsapp || scheduleCandidate.phone || "03353958839"; 
         
         await fetch("http://127.0.0.1:8000/api/send-whatsapp", {
           method: "POST",
@@ -279,6 +279,12 @@ export default function Candidates() {
                       </button>
                     </div>
                   </div>
+
+                  {(c.whatsapp || c.phone) && (
+                    <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📱 WhatsApp: <strong style={{ color: 'var(--text-primary)' }}>{c.whatsapp || c.phone}</strong>
+                    </div>
+                  )}
 
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '8px 0', lineHeight: '1.5' }}>
                     {c.summary}

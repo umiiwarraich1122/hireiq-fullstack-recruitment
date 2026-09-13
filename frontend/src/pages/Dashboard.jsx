@@ -252,11 +252,13 @@ export default function Dashboard() {
           name: safeName,
           email: typeof aiResult.email === 'string' ? aiResult.email : null,
           phone: typeof aiResult.phone === 'string' ? aiResult.phone : null,
+          whatsapp: typeof aiResult.whatsapp === 'string' ? aiResult.whatsapp : (typeof aiResult.phone === 'string' ? aiResult.phone : null),
           education: ensureArray(aiResult.education),
           projects: ensureArray(aiResult.projects),
           github: githubStats,
           matchScore: typeof aiResult.match_score === 'number' ? aiResult.match_score : parseInt(aiResult.match_score) || 0,
           targetRole: selectedJobRole || "Software Developer",
+          careerField: typeof aiResult.career_field === 'string' ? aiResult.career_field : null,
           skills: ensureArray(aiResult.skills),
           summary: typeof aiResult.summary === 'string' ? aiResult.summary : "No summary available.",
           experience: safeExperience
@@ -310,6 +312,7 @@ export default function Dashboard() {
         name: candidate.name,
         email: candidate.email || null,
         phone: candidate.phone || null,
+        whatsapp: candidate.whatsapp || candidate.phone || null,
         job_role: candidate.targetRole || "Candidate",
         match_score: candidate.matchScore,
         skills: candidate.skills,
@@ -532,6 +535,12 @@ export default function Dashboard() {
                           <span className="tag tag-blue" title={`Scored for: ${candidate.targetRole}`}>🤖 Match Score: {candidate.matchScore}%</span>
                           {candidate.experience !== null && candidate.experience !== undefined && (
                             <span className="tag tag-purple">💼 {candidate.experience} Yrs Exp</span>
+                          )}
+                          {candidate.careerField && (
+                            <span className="tag tag-dark">🎯 {candidate.careerField}</span>
+                          )}
+                          {candidate.whatsapp && (
+                            <span className="tag tag-green">📱 {candidate.whatsapp}</span>
                           )}
                           {candidate.github && (
                             <>

@@ -20,7 +20,15 @@ app.add_middleware(
 
 CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
 CEREBRAS_URL = "https://api.cerebras.ai/v1/chat/completions"
-MODEL = "qwen-3.8-27b"
+CEREBRAS_MODEL = "llama3.1-8b"
+
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODEL = "meta-llama/llama-3.1-8b-instruct"
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama3-8b-8192"
 
 class ResumeParseRequest(BaseModel):
     resumeText: str
@@ -134,43 +142,73 @@ async def get_wa_qr():
 
 @app.post("/api/parse-resume")
 async def parse_resume(req: ResumeParseRequest):
-    if not CEREBRAS_API_KEY:
-        raise HTTPException(status_code=500, detail="CEREBRAS_API_KEY is not set in backend .env")
+    if not CEREBRAS_API_KEY and not OPENROUTER_API_KEY and not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="No API Keys configured for parsing resumes.")
         
     prompt = f"""You are an expert technical recruiter and HR AI assistant. 
 Your task is to strictly evaluate this resume against the requirements for the specific role: "{req.targetRole}".
 
 CRITICAL SCORING INSTRUCTIONS:
 - Calculate "match_score" (0 to 100) based ONLY on how well the candidate's skills, career interest, and experience align with the "{req.targetRole}" role.
-- STRICT PENALTY FOR CAREER MISALIGNMENT: If the candidate's primary interest, objective, or dominant experience points toward a different field (e.g. AI/Machine Learning when the role is Full Stack), the match_score MUST be below 40.
-- Heavily penalize if the candidate's core skills are irrelevant to "{req.targetRole}".
-- If the resume is for a completely different profession, the match_score MUST be below 20.
-- **EXPERIENCE CALCULATION RULE**: Count ONLY actual professional work experience, internships, or full-time jobs. DO NOT count the duration of their university degree (e.g. BS CS 2020-2024) as work experience. If they are a fresh graduate with no real jobs, their `experience_years` MUST be 0.
+
+STRICT CAREER FIELD MATCHING RULES:
+- First, determine the candidate's PRIMARY career field from their resume (e.g., "AI/ML Engineer", "Full Stack Developer", "Data Scientist", "DevOps Engineer", "Mobile Developer", etc.)
+- If the candidate's primary career field is DIFFERENT from "{req.targetRole}", the match_score MUST be BELOW 35.
+- Examples of MISMATCHES that MUST score below 35:
+  * AI/ML Engineer applying for Full Stack Developer → max 30
+  * Data Scientist applying for Frontend Developer → max 25
+  * Backend Developer applying for AI Engineer → max 30
+  * RAG/LLM specialist applying for Full Stack → max 25
+- Only give high scores (70+) if the candidate's dominant skills AND career interest directly match "{req.targetRole}".
+- If skills partially overlap but career focus is different, cap at 40-50.
+
+EXPERIENCE CALCULATION RULE (VERY STRICT):
+- Count ONLY actual professional work experience: real jobs at companies, paid internships, or freelance work with clients.
+- DO NOT count any of these as experience:
+  * University/college degree duration (e.g., BS CS 2020-2024 is NOT 4 years experience)
+  * Online courses, certifications, bootcamps
+  * Academic projects or personal side projects
+  * Study duration of any kind (1-year OS course, 2-year diploma, etc.)
+- If the candidate is a fresh graduate with NO actual jobs/internships listed, experience_years MUST be 0.
+- If they have one 3-month internship, experience_years should be 0.25, NOT rounded up.
+
+PHONE/WHATSAPP EXTRACTION RULE:
+- Extract the candidate's mobile/cell phone number from the resume.
+- Look for numbers labeled "WhatsApp", "Mobile", "Cell", "Phone", or "Contact".
+- For Pakistani numbers, they typically start with 03xx or +923xx.
+- If multiple numbers exist, prefer the one labeled "WhatsApp" or "Mobile".
+- Store this in the "whatsapp" field. If no phone number found, set to null.
 
 Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like ```json. DO NOT add conversational text:
 {{
   "name": "Candidate's full name",
   "email": "Email address",
-  "phone": "Phone number",
+  "phone": "Phone number or null",
+  "whatsapp": "WhatsApp/Mobile number or null",
   "github_username": "GitHub username or null",
   "education": "Brief string of degrees/universities",
   "projects": "Brief string of key projects",
   "skills": ["Skill1", "Skill2", "Skill3"],
-  "experience_years": 5,
+  "experience_years": 0,
+  "career_field": "The candidate's primary career field (e.g. AI/ML Engineer, Full Stack Developer, etc.)",
   "match_score": 85,
-  "summary": "1-sentence summary of relevance to the {req.targetRole} role."
+  "summary": "1-sentence summary explaining WHY this score was given for the {req.targetRole} role, mentioning if there is a career field mismatch."
 }}
 
 Resume Text:
 {req.resumeText}"""
 
-    async with httpx.AsyncClient() as client:
-        try:
+    async def call_api(url, key, model, headers_extra=None):
+        headers = {"Authorization": f"Bearer {key}"}
+        if headers_extra:
+            headers.update(headers_extra)
+            
+        async with httpx.AsyncClient() as client:
             res = await client.post(
-                CEREBRAS_URL,
-                headers={"Authorization": f"Bearer {CEREBRAS_API_KEY}"},
+                url,
+                headers=headers,
                 json={
-                    "model": MODEL,
+                    "model": model,
                     "temperature": 0.0,
                     "messages": [
                         {"role": "system", "content": "You extract structured data from resumes. You output raw valid JSON only. No markdown, no prefixes."},
@@ -190,9 +228,38 @@ Resume Text:
                 content = content[start:end+1]
                 
             return json.loads(content)
+
+    last_exception = None
+    
+    if CEREBRAS_API_KEY:
+        try:
+            return await call_api(CEREBRAS_URL, CEREBRAS_API_KEY, CEREBRAS_MODEL)
         except Exception as e:
             print("Cerebras Parse Error:", e)
-            raise HTTPException(status_code=500, detail=str(e))
+            last_exception = e
+            
+    if OPENROUTER_API_KEY:
+        try:
+            headers_extra = {
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "HireIQ"
+            }
+            return await call_api(OPENROUTER_URL, OPENROUTER_API_KEY, OPENROUTER_MODEL, headers_extra)
+        except Exception as e:
+            print("OpenRouter Parse Error:", e)
+            last_exception = e
+            
+    if GROQ_API_KEY:
+        try:
+            return await call_api(GROQ_URL, GROQ_API_KEY, GROQ_MODEL)
+        except Exception as e:
+            print("Groq Parse Error:", e)
+            last_exception = e
+            
+    if last_exception:
+        raise HTTPException(status_code=500, detail=str(last_exception))
+    else:
+        raise HTTPException(status_code=500, detail="No API Keys configured for parsing resumes.")
 
 @app.post("/api/generate-questions")
 async def generate_questions(req: QuestionRequest):
