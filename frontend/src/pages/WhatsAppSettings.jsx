@@ -48,9 +48,9 @@ export default function WhatsAppSettings() {
   };
 
   return (
-    <div className="layout">
+    <div className="dashboard-layout">
       <Sidebar activePage="/whatsapp" />
-      <main className="main-content">
+      <main className="dash-main">
         <h2 className="page-title">WhatsApp Integration</h2>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '70vh' }}>
           <div className="card" style={{ maxWidth: '600px', width: '100%', padding: '40px', textAlign: 'center', margin: '0 auto' }}>
