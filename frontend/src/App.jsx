@@ -13,6 +13,7 @@ import Interviews from './pages/Interviews';
 import InterviewRoom from './pages/InterviewRoom';
 import Results from './pages/Results';
 import Settings from './pages/Settings';
+import WhatsAppSettings from './pages/WhatsAppSettings';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path="/interview-room/:id" element={<InterviewRoom />} />
           <Route path="/results" element={<Results />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/whatsapp" element={<WhatsAppSettings />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

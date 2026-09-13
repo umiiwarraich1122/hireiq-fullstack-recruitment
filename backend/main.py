@@ -46,9 +46,9 @@ def health_check():
 @app.post("/api/send-whatsapp")
 async def send_whatsapp(req: WhatsAppRequest):
     """
-    Sends a WhatsApp message using the WAHA API running on localhost:3000
+    Sends a WhatsApp message using the WAHA API running on localhost:3001
     """
-    WAHA_URL = "http://localhost:3000/api/sendText"
+    WAHA_URL = "http://localhost:3001/api/sendText"
     
     # Clean the phone number and format it for WhatsApp
     # e.g., 03353958839 -> 923353958839@c.us
@@ -67,6 +67,7 @@ async def send_whatsapp(req: WhatsAppRequest):
         try:
             res = await client.post(
                 WAHA_URL,
+                headers={"X-Api-Key": "hireiq_secret_key"},
                 json={
                     "session": "default",
                     "chatId": chat_id,
@@ -79,6 +80,59 @@ async def send_whatsapp(req: WhatsAppRequest):
         except Exception as e:
             print("WAHA Error:", e)
             raise HTTPException(status_code=500, detail=f"Failed to send WhatsApp. Is WAHA running? Error: {str(e)}")
+
+@app.get("/api/whatsapp/status")
+async def get_wa_status():
+    async with httpx.AsyncClient() as client:
+        try:
+            res = await client.get(
+                "http://localhost:3001/api/sessions/default",
+                headers={"X-Api-Key": "hireiq_secret_key"},
+                timeout=5.0
+            )
+            if res.status_code == 404:
+                return {"status": "NOT_FOUND"}
+            return res.json()
+        except Exception as e:
+            return {"status": "ERROR", "detail": str(e)}
+
+@app.post("/api/whatsapp/start")
+async def start_wa():
+    async with httpx.AsyncClient() as client:
+        try:
+            # Attempt to create the session first (ignores 422 if exists)
+            await client.post("http://localhost:3001/api/sessions", json={"name": "default"}, headers={"X-Api-Key": "hireiq_secret_key"})
+            # Start the session
+            res = await client.post("http://localhost:3001/api/sessions/default/start", headers={"X-Api-Key": "hireiq_secret_key"})
+            return res.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/whatsapp/stop")
+async def stop_wa():
+    async with httpx.AsyncClient() as client:
+        try:
+            res = await client.post("http://localhost:3001/api/sessions/default/stop", headers={"X-Api-Key": "hireiq_secret_key"})
+            return res.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi.responses import Response
+
+@app.get("/api/whatsapp/qr")
+async def get_wa_qr():
+    async with httpx.AsyncClient() as client:
+        try:
+            res = await client.get(
+                "http://localhost:3001/api/default/auth/qr?format=image",
+                headers={"X-Api-Key": "hireiq_secret_key"},
+                timeout=10.0
+            )
+            if res.status_code == 200:
+                return Response(content=res.content, media_type="image/png")
+            return Response(content=b"", status_code=res.status_code)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/parse-resume")
 async def parse_resume(req: ResumeParseRequest):
