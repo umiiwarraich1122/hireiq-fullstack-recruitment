@@ -62,11 +62,13 @@ export default function WhatsAppSettings() {
               </div>
             )}
 
-            {(status?.status === 'STOPPED' || status?.status === 'NOT_FOUND') && (
+            {(status?.status === 'STOPPED' || status?.status === 'NOT_FOUND' || status?.status === 'FAILED') && (
               <div>
                 <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📱</div>
                 <h3 style={{ marginBottom: '10px' }}>WhatsApp is Disconnected</h3>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Start the session to generate a QR code and connect your device.</p>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
+                  {status?.status === 'FAILED' ? 'Previous session failed. Please start a new session.' : 'Start the session to generate a QR code and connect your device.'}
+                </p>
                 <button className="btn-primary" onClick={startSession} disabled={loading}>
                   {loading ? 'Starting...' : 'Start Session & Get QR'}
                 </button>

@@ -69,7 +69,7 @@ async def send_whatsapp(req: WhatsAppRequest):
                 WAHA_URL,
                 headers={"X-Api-Key": "hireiq_secret_key"},
                 json={
-                    "session": "default",
+                    "session": "hireiq_session",
                     "chatId": chat_id,
                     "text": req.message
                 },
@@ -86,7 +86,7 @@ async def get_wa_status():
     async with httpx.AsyncClient() as client:
         try:
             res = await client.get(
-                "http://localhost:3001/api/sessions/default",
+                "http://localhost:3001/api/sessions/hireiq_session",
                 headers={"X-Api-Key": "hireiq_secret_key"},
                 timeout=5.0
             )
@@ -100,10 +100,8 @@ async def get_wa_status():
 async def start_wa():
     async with httpx.AsyncClient() as client:
         try:
-            # Attempt to create the session first (ignores 422 if exists)
-            await client.post("http://localhost:3001/api/sessions", json={"name": "default"}, headers={"X-Api-Key": "hireiq_secret_key"})
-            # Start the session
-            res = await client.post("http://localhost:3001/api/sessions/default/start", headers={"X-Api-Key": "hireiq_secret_key"})
+            await client.post("http://localhost:3001/api/sessions", json={"name": "hireiq_session"}, headers={"X-Api-Key": "hireiq_secret_key"})
+            res = await client.post("http://localhost:3001/api/sessions/hireiq_session/start", headers={"X-Api-Key": "hireiq_secret_key"})
             return res.json()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -112,7 +110,7 @@ async def start_wa():
 async def stop_wa():
     async with httpx.AsyncClient() as client:
         try:
-            res = await client.post("http://localhost:3001/api/sessions/default/stop", headers={"X-Api-Key": "hireiq_secret_key"})
+            res = await client.post("http://localhost:3001/api/sessions/hireiq_session/stop", headers={"X-Api-Key": "hireiq_secret_key"})
             return res.json()
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
@@ -124,9 +122,9 @@ async def get_wa_qr():
     async with httpx.AsyncClient() as client:
         try:
             res = await client.get(
-                "http://localhost:3001/api/default/auth/qr?format=image",
+                "http://localhost:3001/api/hireiq_session/auth/qr?format=image",
                 headers={"X-Api-Key": "hireiq_secret_key"},
-                timeout=10.0
+                timeout=30.0
             )
             if res.status_code == 200:
                 return Response(content=res.content, media_type="image/png")
