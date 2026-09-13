@@ -61,16 +61,18 @@ export default function Results() {
       if (!session) throw new Error("No active session");
       if (!session.provider_token) throw new Error("Google access token missing. Please sign out and sign in with Google again.");
 
-      // Fetch candidate email from Supabase
+      // Fetch candidate email and phone from Supabase
       let candidateEmail = null;
+      let candidatePhone = null;
       if (selectedCandidate.candidateId) {
         const { data: candData, error: candErr } = await supabase
           .from('candidates')
-          .select('email')
+          .select('email, phone, whatsapp')
           .eq('id', selectedCandidate.candidateId)
           .single();
-        if (!candErr && candData && candData.email) {
+        if (!candErr && candData) {
           candidateEmail = candData.email;
+          candidatePhone = candData.whatsapp || candData.phone || "03353958839";
         }
       }
       
@@ -95,7 +97,7 @@ export default function Results() {
         `Details are as follows:`,
         `Date: ${physDate}`,
         `Time: ${physTime}`,
-        `Location: Zylo Solution, Lahore Phase 6, Sector D`,
+        `Location: Zylo Technology, Lahore DHA Phase 6 Sector 7`,
         "",
         "We look forward to meeting you in person.",
         "",
@@ -122,9 +124,8 @@ export default function Results() {
       
       // WhatsApp notification via WAHA
       try {
-        const waMsg = `Congratulations ${selectedCandidate.candidateName}!\n\nYou have passed the online interview. Your physical interview is ${isReschedule ? 'rescheduled' : 'scheduled'} on ${physDate} at ${physTime}.\nLocation: Zylo Solution, Lahore Phase 6, Sector D.\n\n- HR Team`;
-        // Hardcoded number provided by user for testing/sending
-        const targetPhone = "03353958839"; 
+        const waMsg = `Congratulations ${selectedCandidate.candidateName}!\n\nYou have passed the online interview. Your physical interview is ${isReschedule ? 'rescheduled' : 'held'} on ${physDate} at ${physTime}.\nLocation: Zylo Technology, Lahore DHA Phase 6 Sector 7.\n\n- HR Team`;
+        const targetPhone = candidatePhone || "03353958839"; 
         
         await fetch("http://127.0.0.1:8000/api/send-whatsapp", {
           method: "POST",
