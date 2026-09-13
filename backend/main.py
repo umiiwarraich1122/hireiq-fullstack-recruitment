@@ -31,6 +31,10 @@ class QuestionRequest(BaseModel):
     candidateSkills: str = ""
     candidateSummary: str = ""
 
+class WhatsAppRequest(BaseModel):
+    phone: str
+    message: str
+
 @app.get("/")
 def read_root():
     return {"message": "Welcome to HireIQ FastAPI Backend"}
@@ -38,6 +42,43 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+@app.post("/api/send-whatsapp")
+async def send_whatsapp(req: WhatsAppRequest):
+    """
+    Sends a WhatsApp message using the WAHA API running on localhost:3000
+    """
+    WAHA_URL = "http://localhost:3000/api/sendText"
+    
+    # Clean the phone number and format it for WhatsApp
+    # e.g., 03353958839 -> 923353958839@c.us
+    phone = req.phone.strip().replace("+", "").replace(" ", "").replace("-", "")
+    
+    # If it starts with 0 (local Pak number), replace 0 with 92
+    if phone.startswith("0") and len(phone) == 11:
+        phone = "92" + phone[1:]
+    # If no country code but 10 digits, assume 92 (for 3353958839)
+    elif len(phone) == 10 and phone.startswith("3"):
+        phone = "92" + phone
+        
+    chat_id = f"{phone}@c.us"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            res = await client.post(
+                WAHA_URL,
+                json={
+                    "session": "default",
+                    "chatId": chat_id,
+                    "text": req.message
+                },
+                timeout=15.0
+            )
+            res.raise_for_status()
+            return {"success": True, "chatId": chat_id, "message": "WhatsApp sent!"}
+        except Exception as e:
+            print("WAHA Error:", e)
+            raise HTTPException(status_code=500, detail=f"Failed to send WhatsApp. Is WAHA running? Error: {str(e)}")
 
 @app.post("/api/parse-resume")
 async def parse_resume(req: ResumeParseRequest):

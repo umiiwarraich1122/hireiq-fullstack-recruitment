@@ -1,0 +1,11 @@
+version: '3'
+services:
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: waha_hireiq
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - WHATSAPP_DEFAULT_ENGINE=WEBJS
+      - WAHA_LOG_LEVEL=info

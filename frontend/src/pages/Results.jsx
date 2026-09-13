@@ -120,6 +120,22 @@ export default function Results() {
       
       showToast(`Physical interview ${isReschedule ? 'rescheduled' : 'scheduled'} and email sent successfully!`, 'success');
       
+      // WhatsApp notification via WAHA
+      try {
+        const waMsg = `Congratulations ${selectedCandidate.candidateName}!\n\nYou have passed the online interview. Your physical interview is ${isReschedule ? 'rescheduled' : 'scheduled'} on ${physDate} at ${physTime}.\nLocation: Zylo Solution, Lahore Phase 6, Sector D.\n\n- HR Team`;
+        // Hardcoded number provided by user for testing/sending
+        const targetPhone = "03353958839"; 
+        
+        await fetch("http://127.0.0.1:8000/api/send-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: targetPhone, message: waMsg })
+        });
+        showToast('WhatsApp alert sent via WAHA!', 'success');
+      } catch (waErr) {
+        console.warn("WAHA error:", waErr);
+      }
+      
       // Save state
       const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
       const updated = stored.map(i => i.id === selectedCandidate.id ? { ...i, physicalDate: physDate, physicalTime: physTime } : i);

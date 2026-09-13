@@ -153,7 +153,24 @@ export default function Candidates() {
         showToast('Candidate has no email address. Only link generated.', 'error');
       }
 
-      // 3. Save Interview
+      // 3. Send WhatsApp via WAHA
+      try {
+        const waMsg = `Hi ${scheduleCandidate.name},\n\nYour interview for ${scheduleCandidate.job_role} is scheduled.\nDate: ${interviewDate}\nTime: ${interviewTime}\nMeet Link: ${meetLink}\n\n- HR Team`;
+        // Use candidate phone if available, else fallback to 03353958839 as requested by user for testing
+        const targetPhone = scheduleCandidate.phone || "03353958839"; 
+        
+        await fetch("http://127.0.0.1:8000/api/send-whatsapp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone: targetPhone, message: waMsg })
+        });
+        showToast('WhatsApp invite sent via WAHA!', 'success');
+      } catch (waErr) {
+        console.warn("WAHA error:", waErr);
+        // Don't block if WAHA is offline
+      }
+
+      // 4. Save Interview
       const newInterview = {
         id: Math.random().toString(36).substr(2, 9),
         candidateId: scheduleCandidate.id,
