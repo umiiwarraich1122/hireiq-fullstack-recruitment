@@ -14,6 +14,7 @@ export default function Candidates() {
   const [scheduleCandidate, setScheduleCandidate] = useState(null);
   const [interviewDate, setInterviewDate] = useState('');
   const [interviewTime, setInterviewTime] = useState('');
+  const [interviewMode, setInterviewMode] = useState('Virtual');
   const [session, setSession] = useState(null);
   const showToast = (text, type = 'success') => {
     setToastMessage({ text, type });
@@ -75,39 +76,43 @@ export default function Candidates() {
     }
 
     try {
-      showToast('Generating Google Meet Link...', 'info');
+      let meetLink = "In-Person Interview (Company Office)";
+      
+      if (interviewMode === 'Virtual') {
+        showToast('Generating Google Meet Link...', 'info');
 
-      // 1. Create Google Calendar Event
-      const eventStart = new Date(`${interviewDate}T${interviewTime}:00`);
-      const eventEnd = new Date(eventStart.getTime() + 60*60*1000); // 1 hour duration
-      const event = {
-        summary: `Interview with ${scheduleCandidate.name} - ${scheduleCandidate.job_role}`,
-        description: `Scheduled via HireIQ for ${scheduleCandidate.job_role}`,
-        start: { dateTime: eventStart.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-        end: { dateTime: eventEnd.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-        conferenceData: {
-          createRequest: {
-            requestId: `hireiq-${Math.random().toString(36).substring(7)}`,
-            conferenceSolutionKey: { type: "hangoutsMeet" }
+        // 1. Create Google Calendar Event
+        const eventStart = new Date(`${interviewDate}T${interviewTime}:00`);
+        const eventEnd = new Date(eventStart.getTime() + 60*60*1000); // 1 hour duration
+        const event = {
+          summary: `Interview with ${scheduleCandidate.name} - ${scheduleCandidate.job_role}`,
+          description: `Scheduled via HireIQ for ${scheduleCandidate.job_role}`,
+          start: { dateTime: eventStart.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+          end: { dateTime: eventEnd.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+          conferenceData: {
+            createRequest: {
+              requestId: `hireiq-${Math.random().toString(36).substring(7)}`,
+              conferenceSolutionKey: { type: "hangoutsMeet" }
+            }
           }
-        }
-      };
+        };
 
-      const calRes = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session.provider_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(event)
-      });
-      const calData = await calRes.json();
-      
-      if (calData.error) {
-        throw new Error(calData.error.message || "Failed to create calendar event");
+        const calRes = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session.provider_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(event)
+        });
+        const calData = await calRes.json();
+        
+        if (calData.error) {
+          throw new Error(calData.error.message || "Failed to create calendar event");
+        }
+        
+        meetLink = calData.hangoutLink || "No link generated";
       }
-      
-      const meetLink = calData.hangoutLink || "No link generated";
 
       // 2. Send Email via Gmail API
       if (scheduleCandidate.email) {
@@ -120,12 +125,12 @@ export default function Candidates() {
           "",
           `Dear ${scheduleCandidate.name},`,
           "",
-          `Thank you for applying to our company. We have scheduled an interview with you for the role of ${scheduleCandidate.job_role}.`,
+          `Thank you for applying to our company. We have scheduled a ${interviewMode.toLowerCase()} interview with you for the role of ${scheduleCandidate.job_role}.`,
           "",
           `Date: ${interviewDate}`,
           `Time: ${interviewTime}`,
           "",
-          `Please join the video interview using this Google Meet link:`,
+          interviewMode === 'Virtual' ? `Please join the video interview using this Google Meet link:` : `Please visit our company office at the scheduled time.`,
           `${meetLink}`,
           "",
           "Best regards,",
@@ -155,7 +160,8 @@ export default function Candidates() {
 
       // 3. Send WhatsApp via WAHA
       try {
-        const waMsg = `Hi ${scheduleCandidate.name},\n\nYour interview for ${scheduleCandidate.job_role} is scheduled.\nDate: ${interviewDate}\nTime: ${interviewTime}\nMeet Link: ${meetLink}\n\n- HR Team`;
+        const modeText = interviewMode === 'Virtual' ? 'Meet Link' : 'Location';
+        const waMsg = `Hi ${scheduleCandidate.name},\n\nYour ${interviewMode.toLowerCase()} interview for ${scheduleCandidate.job_role} is scheduled.\nDate: ${interviewDate}\nTime: ${interviewTime}\n${modeText}: ${meetLink}\n\n- HR Team`;
         // Use candidate's WhatsApp number from CV, then phone, then fallback
         const targetPhone = scheduleCandidate.whatsapp || scheduleCandidate.phone || "03353958839"; 
         
@@ -382,6 +388,14 @@ export default function Candidates() {
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-primary)' }}>Select Time</label>
               <input type="time" value={interviewTime} onClick={(e) => { try { e.target.showPicker() } catch(err){} }} onChange={e => setInterviewTime(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'var(--text-primary)', cursor: 'pointer' }} />
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-primary)' }}>Interview Mode</label>
+              <select value={interviewMode} onChange={e => setInterviewMode(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-heavy)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                <option value="Virtual">Virtual (Google Meet)</option>
+                <option value="Physical">Physical (In-Person)</option>
+              </select>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
