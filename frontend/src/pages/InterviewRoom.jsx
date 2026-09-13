@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../config/supabaseClient';
 import { generateInterviewQuestions } from '../utils/aiService';
 import Sidebar from '../components/Sidebar';
+import { motion } from 'framer-motion';
 
 export default function InterviewRoom() {
   const { id } = useParams();
@@ -11,6 +12,13 @@ export default function InterviewRoom() {
   const [meetLink, setMeetLink] = useState('');
   const [questions, setQuestions] = useState(null);
   const [isLoadingQA, setIsLoadingQA] = useState(false);
+
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const showToast = (text, type = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -29,7 +37,7 @@ export default function InterviewRoom() {
     const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
     const updated = stored.map(i => i.id === id ? { ...i, meetLink } : i);
     localStorage.setItem('hireiq_interviews', JSON.stringify(updated));
-    alert('Meeting link saved successfully!');
+    showToast('Meeting link saved successfully!', 'success');
   };
 
   const handleGenerateQA = async () => {
@@ -38,9 +46,10 @@ export default function InterviewRoom() {
       setIsLoadingQA(true);
       const qa = await generateInterviewQuestions(interview.jobRole, interview.skills, interview.summary);
       setQuestions(qa);
+      showToast('Questions generated successfully!', 'success');
     } catch (err) {
       console.error(err);
-      alert("Failed to generate questions.");
+      showToast("Failed to generate questions.", 'error');
     } finally {
       setIsLoadingQA(false);
     }
@@ -51,7 +60,7 @@ export default function InterviewRoom() {
     const updated = stored.map(i => i.id === id ? { ...i, status: newStatus } : i);
     localStorage.setItem('hireiq_interviews', JSON.stringify(updated));
     setInterview(prev => ({ ...prev, status: newStatus }));
-    alert(`Candidate marked as ${newStatus}!`);
+    showToast(`Candidate marked as ${newStatus}!`, 'success');
   };
 
   if (!interview) return <div style={{ color: 'white', padding: '40px', textAlign: 'center' }}>Loading Room...</div>;
@@ -178,6 +187,32 @@ export default function InterviewRoom() {
         </div>
 
       </main>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, x: '-50%' }}
+          animate={{ opacity: 1, y: 0, x: '-50%' }}
+          style={{
+            position: 'fixed',
+            bottom: '40px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: toastMessage.type === 'error' ? 'var(--red)' : 'var(--green)',
+            color: '#fff',
+            padding: '12px 24px',
+            borderRadius: '30px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+            zIndex: 9999,
+            fontWeight: 500,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          {toastMessage.type === 'error' ? '⚠️' : '✅'} {toastMessage.text}
+        </motion.div>
+      )}
     </div>
   );
 }

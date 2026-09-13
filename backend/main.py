@@ -198,6 +198,10 @@ Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown 
 Resume Text:
 {req.resumeText}"""
 
+    system_prompt = "You extract structured data from resumes. You output raw valid JSON only. No markdown, no prefixes."
+    return await run_llm_fallback(system_prompt, prompt)
+
+async def run_llm_fallback(system_prompt: str, user_prompt: str):
     async def call_api(url, key, model, headers_extra=None):
         headers = {"Authorization": f"Bearer {key}"}
         if headers_extra:
@@ -211,8 +215,8 @@ Resume Text:
                     "model": model,
                     "temperature": 0.0,
                     "messages": [
-                        {"role": "system", "content": "You extract structured data from resumes. You output raw valid JSON only. No markdown, no prefixes."},
-                        {"role": "user", "content": prompt}
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
                     ]
                 },
                 timeout=30.0
@@ -222,10 +226,17 @@ Resume Text:
             content = data["choices"][0]["message"]["content"]
             
             content = content.replace("```json", "").replace("```", "").strip()
-            start = content.find("{")
-            end = content.rfind("}")
-            if start != -1 and end != -1:
-                content = content[start:end+1]
+            
+            # Support both dict and list JSON
+            start_dict = content.find("{")
+            end_dict = content.rfind("}")
+            start_list = content.find("[")
+            end_list = content.rfind("]")
+            
+            if start_dict != -1 and end_dict != -1 and (start_list == -1 or start_dict < start_list):
+                content = content[start_dict:end_dict+1]
+            elif start_list != -1 and end_list != -1:
+                content = content[start_list:end_list+1]
                 
             return json.loads(content)
 
@@ -259,51 +270,31 @@ Resume Text:
     if last_exception:
         raise HTTPException(status_code=500, detail=str(last_exception))
     else:
-        raise HTTPException(status_code=500, detail="No API Keys configured for parsing resumes.")
+        raise HTTPException(status_code=500, detail="No API Keys configured.")
 
 @app.post("/api/generate-questions")
 async def generate_questions(req: QuestionRequest):
     try:
-        from langchain_community.chat_models import ChatOllama
-        from langchain.prompts import PromptTemplate
-        from langchain_core.output_parsers import JsonOutputParser
-        
-        # We assume local Ollama is running on default port
-        llm = ChatOllama(model="llama3.2:3b", temperature=0.7)
-        
-        template = """You are an expert technical interviewer.
-I need 5 technical interview questions and their concise answers for a candidate applying for the "{job_role}" role.
+        user_prompt = f"""I need 5 technical interview questions and their concise answers for a candidate applying for the "{req.jobRole}" role.
 
-Candidate's Background Summary: {summary}
-Candidate's Skills: {skills}
+Candidate's Background Summary: {req.candidateSummary or "No summary available"}
+Candidate's Skills: {req.candidateSkills or "No specific skills listed"}
 
 Generate questions that are highly relevant to their specific skills and background. 
-If their skills are empty, just ask general questions for the {job_role} role.
+If their skills are empty, just ask general questions for the {req.jobRole} role."""
 
-Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like ```json:
+        system_prompt = """You are an expert technical interviewer.
+Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown formatting like ```json.
 [
-  {{
+  {
     "question": "The interview question",
     "answer": "The concise, correct technical answer"
-  }}
+  }
 ]"""
         
-        prompt = PromptTemplate(
-            template=template,
-            input_variables=["job_role", "summary", "skills"]
-        )
-        
-        parser = JsonOutputParser()
-        chain = prompt | llm | parser
-        
-        result = chain.invoke({
-            "job_role": req.jobRole,
-            "summary": req.candidateSummary or "No summary available",
-            "skills": req.candidateSkills or "No specific skills listed"
-        })
-        
+        result = await run_llm_fallback(system_prompt, user_prompt)
         return result
-
+        
     except Exception as e:
-        print("Ollama QA Error:", e)
-        raise HTTPException(status_code=500, detail=f"Ollama Error: Make sure Ollama is running! {str(e)}")
+        print("Generate Questions Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
