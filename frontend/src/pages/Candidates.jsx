@@ -266,9 +266,15 @@ export default function Candidates() {
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c.job_role}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                        ⭐ {c.match_score}% Match
-                      </div>
+                      {c.match_score === 0 ? (
+                          <div className="score-val" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                            ? Role Mismatch (0%)
+                          </div>
+                        ) : (
+                          <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                            ?? {c.match_score}% Match
+                          </div>
+                        )}
                       {(c.experience_years !== undefined ? c.experience_years : c.github_stats?.experience) !== undefined && (c.experience_years !== undefined ? c.experience_years : c.github_stats?.experience) !== null && (
                         <div className="score-val" style={{ background: 'var(--bg-heavy)', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', color: 'var(--purple-light)' }}>
                           💼 {c.experience_years !== undefined ? c.experience_years : c.github_stats?.experience} Yrs Exp

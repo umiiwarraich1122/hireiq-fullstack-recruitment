@@ -162,12 +162,14 @@ export default function Dashboard() {
     }, 3500);
   };
 
-  const runAIScreening = async () => {
+  const runAIScreening = async (overrideRole) => {
     try {
       setScanMessage({ type: 'info', text: `Starting scan... Found ${emails.length} emails to process.` });
       setIsScanning(true);
       const results = [];
       const processedEmails = new Set();
+        let skippedNoPdf = 0;
+        let skippedDuplicate = 0;
       
       for (const email of emails) {
         if (!email.attachments || email.attachments.length === 0) {
@@ -185,7 +187,7 @@ export default function Dashboard() {
         }
         processedEmails.add(rawEmail.toLowerCase());
 
-        const currentTargetRole = selectedJobRole || "Software Developer";
+        const currentTargetRole = (typeof overrideRole === "string" ? overrideRole : selectedJobRole) || "Software Developer";
 
         // Check if candidate already exists in Supabase FOR THIS SPECIFIC ROLE
         const { data: existingCandidate } = await supabase
@@ -198,7 +200,8 @@ export default function Dashboard() {
         if (existingCandidate && existingCandidate.length > 0) {
           setScanMessage({ type: 'info', text: `Skipped duplicate: ${rawEmail} is already scanned for ${currentTargetRole}.` });
           addActivity('Duplicate Filter', `Skipped CV from ${rawEmail} for ${currentTargetRole}`, 'orange');
-          continue; // Skip processing this email
+          skippedDuplicate++;
+            continue; // Skip processing this email
         }
         
         const attachment = email.attachments[0]; // Process the first PDF attachment
@@ -220,7 +223,7 @@ export default function Dashboard() {
         
         setScanMessage({ type: 'info', text: `Analyzing CV with Local AI (${selectedJobRole || 'Target Role'}) for ${email.sender}...` });
         addActivity('Matching Agent', `Evaluating skills against '${selectedJobRole || "Target Role"}'`, 'blue');
-        const aiResult = await analyzeResumeText(pdfText, selectedJobRole || "Software Developer");
+        const aiResult = await analyzeResumeText(pdfText, currentTargetRole);
         
         let githubStats = null;
         if (aiResult.github_username) {
@@ -257,7 +260,7 @@ export default function Dashboard() {
           projects: ensureArray(aiResult.projects),
           github: githubStats,
           matchScore: typeof aiResult.match_score === 'number' ? aiResult.match_score : parseInt(aiResult.match_score) || 0,
-          targetRole: selectedJobRole || "Software Developer",
+          targetRole: currentTargetRole,
           careerField: typeof aiResult.career_field === 'string' ? aiResult.career_field : null,
           skills: ensureArray(aiResult.skills),
           summary: typeof aiResult.summary === 'string' ? aiResult.summary : "No summary available.",
@@ -463,7 +466,15 @@ export default function Dashboard() {
                 {/* Job Role Selector */}
                 <select 
                   value={selectedJobRole}
-                  onChange={(e) => setSelectedJobRole(e.target.value)}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    setSelectedJobRole(newRole);
+                    setScanMessage(null);
+                    setScannedCandidates([]);
+                    if (emails.length > 0) {
+                      setTimeout(() => runAIScreening(newRole), 0);
+                    }
+                  }}
                   style={{
                     padding: '8px 12px', background: 'var(--bg-tab)', border: '1px solid var(--glass-border)',
                     borderRadius: '8px', color: 'var(--text-primary)', outline: 'none', fontSize: '0.85rem'
@@ -726,12 +737,16 @@ export default function Dashboard() {
         onClose={() => setIsChatOpen(false)} 
         emailsCount={emails.length} 
         inboxSenders={emails.map(e => e.sender.split('<')[0].trim()).join(', ')}
-        user={user} 
+        user={user}
+        session={session} syncGmailCVs={syncGmailCVs}
+         
       />
       <JobRoleModal 
         isOpen={isJobModalOpen} 
         onClose={() => setIsJobModalOpen(false)} 
-        user={user} 
+        user={user}
+        session={session} syncGmailCVs={syncGmailCVs}
+         
         onJobAdded={fetchJobRoles} 
       />
 
@@ -763,3 +778,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+

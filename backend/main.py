@@ -152,14 +152,15 @@ CRITICAL SCORING INSTRUCTIONS:
 - Calculate "match_score" (0 to 100) based ONLY on how well the candidate's skills, career interest, and experience align with the "{req.targetRole}" role.
 
 STRICT CAREER FIELD MATCHING RULES:
-- First, determine the candidate's PRIMARY career field from their resume (e.g., "AI/ML Engineer", "Full Stack Developer", "Data Scientist", "DevOps Engineer", "Mobile Developer", etc.)
-- If the candidate's primary career field is DIFFERENT from "{req.targetRole}", the match_score MUST be BELOW 35.
-- Examples of MISMATCHES that MUST score below 35:
-  * AI/ML Engineer applying for Full Stack Developer → max 30
-  * Data Scientist applying for Frontend Developer → max 25
-  * Backend Developer applying for AI Engineer → max 30
-  * RAG/LLM specialist applying for Full Stack → max 25
-- Only give high scores (70+) if the candidate's dominant skills AND career interest directly match "{req.targetRole}".
+- First, determine the candidate's PRIMARY career field from their resume.
+- If the candidate is a Student or Fresh Graduate (e.g., "Computer Science Student"), DO NOT instantly give a 0. Instead, evaluate their MATCH SCORE strictly based on their SKILLS, ACADEMIC PROJECTS, and GITHUB.
+- If the candidate is a PROFESSIONAL whose primary career field is completely DIFFERENT from "{req.targetRole}", the match_score MUST be EXACTLY 0.
+- Examples of MISMATCHES that MUST score exactly 0:
+  * AI/ML Engineer applying for Full Stack Developer -> 0
+  * Data Scientist applying for Frontend Developer -> 0
+  * Backend Developer applying for AI Engineer -> 0
+  * RAG/LLM specialist applying for Full Stack -> 0
+- Only give high scores (70+) if the candidate's dominant skills AND projects directly match "{req.targetRole}".
 - If skills partially overlap but career focus is different, cap at 40-50.
 
 EXPERIENCE CALCULATION RULE (VERY STRICT):
@@ -298,3 +299,51 @@ Return ONLY raw valid JSON matching exactly this structure. DO NOT use markdown 
     except Exception as e:
         print("Generate Questions Error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+class ChatAgentRequest(BaseModel):
+    message: str
+    history: list = []
+    context: dict = {}
+
+@app.post("/api/chat-agent")
+async def chat_agent(req: ChatAgentRequest):
+
+    try:
+        history_text = "\n".join([f"{m.get('role', 'user').upper()}: {m.get('content', '')}" for m in req.history[-6:]])
+        user_prompt = f"Chat History:\n{history_text}\n\nCurrent User Message: {req.message}"
+        
+        system_prompt = f"""You are Nova, an AI HR Coordinator. You process HR requests and execute actions.
+
+Context Data:
+{json.dumps(req.context)}
+
+Your job is to reply to the user naturally AND output an action if needed.
+Valid actions: 
+- "NONE": just chatting
+- "SYNC_GMAIL": if user asks to check/scan new emails/CVs
+- "SHOW_TOP_CANDIDATES": if user asks to show top/best candidates
+- "SHORTLIST_CANDIDATE": if user asks to shortlist a specific candidate
+- "SCHEDULE_INTERVIEW": if user asks to schedule an interview or set a meeting with a candidate
+- "GET_STATS": if user asks how many passed/failed, or how many interviews are scheduled today.
+
+If scheduling an interview, extract 'candidateName', 'date' (YYYY-MM-DD), 'time' (HH:MM), 'mode' (Virtual/Physical) into actionPayload. If they didn't specify, use logical defaults (tomorrow at 14:00, Virtual).
+If shortlisting, extract 'candidateName' into actionPayload.
+
+Return ONLY a raw valid JSON object matching exactly this structure:
+{{
+  "reply": "Your natural language response to the user",
+  "action": "ACTION_NAME",
+  "actionPayload": {{}} 
+}}
+Do NOT output markdown (no \\json)."""
+        
+        result = await run_llm_fallback(system_prompt, user_prompt)
+        return result
+        
+    except Exception as e:
+        print("Chat Agent Error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+

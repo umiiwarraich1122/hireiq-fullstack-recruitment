@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+nova_code = '''import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../config/supabaseClient';
 
@@ -38,7 +38,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
     setInput(e.target.value);
     if (textareaRef.current) {
       textareaRef.current.style.height = '50px';
-      textareaRef.current.style.height = String(Math.min(textareaRef.current.scrollHeight, 250)) + 'px';
+      textareaRef.current.style.height = \px;
     }
   };
 
@@ -51,90 +51,71 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
       return "I couldn't trigger the Gmail sync. Make sure you are logged in.";
     }
     
-    
-    if (action === 'GET_STATS') {
-      const stored = JSON.parse(localStorage.getItem('hireiq_interviews') || '[]');
-      const today = new Date().toISOString().split('T')[0];
-      const todayInterviews = stored.filter(i => i.date === today);
-      return "You have " + stored.length + " total interviews scheduled, and " + todayInterviews.length + " interviews today.";
-    }
-
-    if (action === 'SHOW_TOP_CANDIDATES') {
-      const topCandidates = candidates.sort((a,b) => b.match_score - a.match_score).slice(0, 3);
-      const list = topCandidates.map(c => c.name + " (" + c.match_score + "%)").join(", ");
-      return "Top candidates are: " + list;
-    }
-
-    if (action === 'SHORTLIST_CANDIDATE') {
-      const candidateName = payload?.candidateName;
-      if (!candidateName) return "I need a candidate name to shortlist.";
-      const candidate = candidates.find(c => c.name.toLowerCase().includes(candidateName.toLowerCase()));
-      if (!candidate) return "I couldn't find a candidate named " + candidateName;
-      
-      // We will pretend we shortlisted them in UI, though they are already in the Candidates table
-      return candidate.name + " has been successfully highlighted/shortlisted!";
-    }
-    
     if (action === 'SCHEDULE_INTERVIEW') {
-
+      // Find candidate
       const candidateName = payload?.candidateName;
       if (!candidateName) return "I need a candidate name to schedule the interview.";
       const candidate = candidates.find(c => c.name.toLowerCase().includes(candidateName.toLowerCase()));
-      if (!candidate) return "I couldn't find a candidate named " + candidateName + " in the database.";
+      if (!candidate) return I couldn't find a candidate named \ in the database.;
       
       const date = payload?.date || new Date(Date.now() + 86400000).toISOString().split('T')[0];
       const time = payload?.time || "14:00";
       const mode = payload?.mode || "Virtual";
+      
       let meetLink = "In-Person Interview (Company Office)";
       
+      // We will perform the scheduling workflow
       try {
         if (mode === 'Virtual' && session?.provider_token) {
-           const eventStart = new Date(date + 'T' + time + ':00');
+           const eventStart = new Date(\T\:00);
            const eventEnd = new Date(eventStart.getTime() + 60*60*1000);
            const event = {
-             summary: "Interview with " + candidate.name + " - " + candidate.job_role,
-             description: "Scheduled via HireIQ for " + candidate.job_role,
+             summary: Interview with \ - \,
+             description: Scheduled via HireIQ for \,
              start: { dateTime: eventStart.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
              end: { dateTime: eventEnd.toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
              conferenceData: {
-               createRequest: { requestId: "hireiq-" + Math.random().toString(36).substring(7), conferenceSolutionKey: { type: "hangoutsMeet" } }
+               createRequest: { requestId: hireiq-\, conferenceSolutionKey: { type: "hangoutsMeet" } }
              }
            };
            const calRes = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1", {
-             method: "POST", headers: { "Authorization": "Bearer " + session.provider_token, "Content-Type": "application/json" },
+             method: "POST", headers: { "Authorization": Bearer \, "Content-Type": "application/json" },
              body: JSON.stringify(event)
            });
            const calData = await calRes.json();
            if (!calData.error) meetLink = calData.hangoutLink || "No link generated";
         }
         
+        // Email
         if (candidate.email && session?.provider_token) {
           const emailLines = [
-            "To: " + candidate.email,
-            "Subject: Interview Scheduled: " + candidate.job_role,
+            To: \,
+            Subject: Interview Scheduled: \,
             "Content-Type: text/plain; charset=utf-8", "",
-            "Dear " + candidate.name + ",", "",
-            "We have scheduled a " + mode.toLowerCase() + " interview with you for the role of " + candidate.job_role + ".", "",
-            "Date: " + date, "Time: " + time, "",
-            mode === 'Virtual' ? "Please join using this Google Meet link:" : "Please visit our company office at the scheduled time.",
-            meetLink, "", "Best regards,", "HR Team"
+            Dear \,, "",
+            We have scheduled a \ interview with you for the role of \., "",
+            Date: \, Time: \, "",
+            mode === 'Virtual' ? Please join using this Google Meet link: : Please visit our company office at the scheduled time.,
+            \, "", "Best regards,", "HR Team"
           ];
-          const rawEmail = emailLines.join('\r\n');
-          const encodedEmail = btoa(unescape(encodeURIComponent(rawEmail))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+          const rawEmail = emailLines.join("\\r\\n");
+          const encodedEmail = btoa(unescape(encodeURIComponent(rawEmail))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
           await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
-            method: "POST", headers: { "Authorization": "Bearer " + session.provider_token, "Content-Type": "application/json" },
+            method: "POST", headers: { "Authorization": Bearer \, "Content-Type": "application/json" },
             body: JSON.stringify({ raw: encodedEmail })
           });
         }
         
+        // WAHA
         const targetPhone = candidate.whatsapp || candidate.phone || "03353958839"; 
         const modeText = mode === 'Virtual' ? 'Meet Link' : 'Location';
-        const waMsg = "Hi " + candidate.name + ",\n\nYour " + mode.toLowerCase() + " interview for " + candidate.job_role + " is scheduled.\nDate: " + date + "\nTime: " + time + "\n" + modeText + ": " + meetLink + "\n\n- HR Team";
+        const waMsg = Hi \,\\n\\nYour \ interview for \ is scheduled.\\nDate: \\\nTime: \\\n\: \\\n\\n- HR Team;
         await fetch("http://127.0.0.1:8000/api/send-whatsapp", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: targetPhone, message: waMsg })
         });
         
+        // Save
         const newInterview = {
           id: Math.random().toString(36).substr(2, 9),
           candidateId: candidate.id, candidateName: candidate.name, jobRole: candidate.job_role,
@@ -144,9 +125,9 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
         stored.push(newInterview);
         localStorage.setItem('hireiq_interviews', JSON.stringify(stored));
         
-        return "Successfully scheduled a " + mode + " interview with **" + candidate.name + "** for **" + date + "** at **" + time + "**.\nI have also sent the Google Calendar invite, Email, and WhatsApp message to the candidate!";
+        return Successfully scheduled a \ interview with **\** for **\** at **\**.\\nI have also sent the Google Calendar invite, Email, and WhatsApp message to the candidate!;
       } catch (err) {
-        return "I tried to schedule the interview but encountered an error: " + err.message;
+        return I tried to schedule the interview but encountered an error: \;
       }
     }
     
@@ -192,7 +173,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
         const actionResult = await executeAction(data.action, data.actionPayload, candidatesContext);
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: data.reply + (actionResult ? "\n\n*System Update*: " + actionResult : "") 
+          content: data.reply + (actionResult ? "\\n\\n*System Update*: " + actionResult : "") 
         }]);
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
@@ -209,7 +190,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
   return (
     <AnimatePresence>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)', zIndex: 999 }} />
-      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: String(sidebarWidth) + 'px', maxWidth: '100vw', background: 'var(--bg-deep)', borderLeft: '1px solid var(--glass-border)', boxShadow: '-10px 0 40px rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
+      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} style={{ position: 'fixed', top: 0, right: 0, height: '100vh', width: \\px\, maxWidth: '100vw', background: 'var(--bg-deep)', borderLeft: '1px solid var(--glass-border)', boxShadow: '-10px 0 40px rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', flexDirection: 'column' }}>
         <div onMouseDown={() => setIsDragging(true)} style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '6px', cursor: 'ew-resize', zIndex: 10, background: isDragging ? 'var(--accent)' : 'transparent', transition: 'background 0.2s' }} />
         <div style={{ padding: '24px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-heavy)' }}>
           <h2 style={{ margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.25rem' }}>
@@ -242,3 +223,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
     </AnimatePresence>
   );
 }
+'''
+with open('frontend/src/components/NovaChatbot.jsx', 'w', encoding='utf-8') as f:
+    f.write(nova_code)
+print("NovaChatbot.jsx rewritten")
