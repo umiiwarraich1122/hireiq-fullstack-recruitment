@@ -130,7 +130,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
         const targetPhone = candidate.whatsapp || candidate.phone || "03353958839"; 
         const modeText = mode === 'Virtual' ? 'Meet Link' : 'Location';
         const waMsg = "Hi " + candidate.name + ",\n\nYour " + mode.toLowerCase() + " interview for " + candidate.job_role + " is scheduled.\nDate: " + date + "\nTime: " + time + "\n" + modeText + ": " + meetLink + "\n\n- HR Team";
-        await fetch("http://127.0.0.1:8000/api/send-whatsapp", {
+        await fetch(${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/send-whatsapp", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ phone: targetPhone, message: waMsg })
         });
@@ -177,7 +177,7 @@ export default function NovaChatbot({ isOpen, onClose, emailsCount = 0, inboxSen
     };
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/chat-agent", {
+      const res = await fetch(${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/chat-agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
